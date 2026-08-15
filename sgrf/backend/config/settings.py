@@ -157,7 +157,19 @@ if DEBUG and not CORS_ALLOWED_ORIGINS:
 
 # El filesystem de Render es efimero: lo que se sube se pierde en cada
 # redespliegue. Por eso las imagenes se almacenan fuera de la aplicacion.
-CLOUDINARY_URL = variable("CLOUDINARY_URL")
+CLOUDINARY_URL = variable("CLOUDINARY_URL").strip()
+
+if CLOUDINARY_URL and not CLOUDINARY_URL.startswith("cloudinary://"):
+    import logging
+
+    logging.getLogger(__name__).warning(
+        "CLOUDINARY_URL mal formada: debe comenzar con 'cloudinary://'. "
+        "Se deshabilita la subida de fotografias."
+    )
+    # La biblioteca lee la variable del entorno al importarse y falla si el
+    # formato es invalido, de modo que se la retira antes de continuar.
+    os.environ.pop("CLOUDINARY_URL", None)
+    CLOUDINARY_URL = ""
 
 if CLOUDINARY_URL:
     # La biblioteca se configura sola leyendo CLOUDINARY_URL del entorno.

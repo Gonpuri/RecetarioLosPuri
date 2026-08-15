@@ -1,0 +1,64 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    /* Capitulo 6.4: tamanio base de 16 px. */
+    font-size: 16px;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-papel text-tinta antialiased;
+  }
+
+  /* Capitulo 6.9: foco visible para navegacion por teclado. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-azul ring-offset-2 ring-offset-papel;
+  }
+
+  /* Capitulo 6.9: respetar la preferencia de movimiento reducido. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .boton-primario {
+    @apply inline-flex items-center justify-center gap-2 rounded-pieza bg-azul
+           px-5 py-3 font-semibold text-white transition-colors
+           hover:bg-azul-oscuro disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .boton-secundario {
+    @apply inline-flex items-center justify-center gap-2 rounded-pieza
+           border border-borde bg-white px-5 py-3 font-medium text-tinta
+           transition-colors hover:border-azul hover:text-azul
+           disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .campo {
+    @apply w-full rounded-pieza border border-borde bg-white px-4 py-3
+           text-base text-tinta transition-colors placeholder:text-tinta-tenue
+           focus:border-azul focus:outline-none focus:ring-2 focus:ring-azul/25;
+  }
+
+  .etiqueta-campo {
+    @apply mb-1.5 block text-sm font-medium text-tinta-suave;
+  }
+
+  .tarjeta {
+    @apply rounded-pieza border border-borde bg-white shadow-tarjeta;
+  }
+
+  .chip {
+    @apply inline-flex items-center rounded-full bg-azul-claro px-3 py-1
+           text-sm font-medium text-azul-oscuro;
+  }
+}

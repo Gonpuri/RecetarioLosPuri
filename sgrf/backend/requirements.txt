@@ -1,0 +1,22 @@
+# Backend del SGRF - Django REST Framework sobre PostgreSQL
+
+Django==5.0.6
+djangorestframework==3.15.1
+djangorestframework-simplejwt==5.3.1
+django-cors-headers==4.3.1
+
+# Base de datos
+psycopg[binary]==3.1.19
+dj-database-url==2.2.0
+
+# Servidor y estaticos en Render
+gunicorn==22.0.0
+whitenoise==6.6.0
+
+# Almacenamiento de fotografias
+# El filesystem de Render es efimero: las imagenes viven fuera de la aplicacion.
+cloudinary==1.40.0
+
+# Pruebas
+pytest==8.2.2
+pytest-django==4.8.0

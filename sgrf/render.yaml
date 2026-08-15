@@ -1,0 +1,48 @@
+# Plano de infraestructura para Render.
+#
+# Al conectar el repositorio, Render lee este archivo y crea el servicio web
+# junto con la base de datos PostgreSQL. Las variables marcadas con
+# `sync: false` deben cargarse a mano en el panel: no se versionan.
+
+databases:
+  - name: sgrf-postgres
+    databaseName: sgrf
+    user: sgrf
+    plan: free
+
+services:
+  - type: web
+    name: sgrf-backend
+    runtime: python
+    plan: free
+    region: oregon
+    rootDir: backend
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn config.wsgi:application --bind 0.0.0.0:$PORT"
+    healthCheckPath: /api/estado/
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.3"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: sgrf-postgres
+          property: connectionString
+      # Dominio del front en Vercel
+      - key: CORS_ALLOWED_ORIGINS
+        sync: false
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
+      # Administrador inicial
+      - key: ADMIN_CORREO
+        sync: false
+      - key: ADMIN_CLAVE
+        sync: false
+      - key: ADMIN_NOMBRE
+        sync: false
+      # Almacenamiento de fotografias
+      - key: CLOUDINARY_URL
+        sync: false

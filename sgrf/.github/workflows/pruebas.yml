@@ -1,0 +1,87 @@
+# Pruebas automáticas en cada push.
+#
+# Existe porque el proyecto se trabaja directamente en producción: si algo
+# rompe una regla del negocio, conviene enterarse antes del despliegue y no
+# después, con la familia usando la aplicación.
+#
+# Las pruebas de dominio y aplicación no necesitan base de datos: corren en
+# segundos. Las de infraestructura y API sí, y por eso levantan PostgreSQL.
+
+name: Pruebas
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  reglas-del-negocio:
+    name: Dominio y casos de uso
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r backend/requirements.txt
+
+      - name: Probar dominio y aplicación
+        run: cd backend && pytest tests/dominio tests/aplicacion
+
+  persistencia-y-api:
+    name: Persistencia y API
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: sgrf
+          POSTGRES_PASSWORD: sgrf
+          POSTGRES_DB: sgrf_pruebas
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Instalar dependencias
+        run: pip install -r backend/requirements.txt
+
+      - name: Probar contra PostgreSQL
+        env:
+          DATABASE_URL: postgresql://sgrf:sgrf@localhost:5432/sgrf_pruebas
+          SECRET_KEY: clave-solo-para-las-pruebas
+          DEBUG: "True"
+        run: cd backend && pytest tests/infraestructura tests/presentacion
+
+  front:
+    name: Compilación del front
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias
+        run: cd frontend && npm install
+
+      - name: Verificar tipos y compilar
+        run: cd frontend && npm run build

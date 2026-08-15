@@ -99,7 +99,12 @@ todavía faltan las variables de entorno.
 
 ### 3.2 Cargar las variables de entorno
 
-Entrá a `sgrf-backend` → pestaña **Environment** → **Add Environment Variable**.
+Entrá al servicio `sgrf-backend` en Render y buscá la sección **Environment**.
+En la mayoría de las vistas está en la barra lateral izquierda del servicio; si
+no aparece, entrá en **Settings** y luego en **Environment Variables** o
+**Environment** según la interfaz.
+
+Luego hacé clic en **Add Environment Variable**.
 
 Agregá estas cinco:
 

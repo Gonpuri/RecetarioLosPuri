@@ -30,6 +30,8 @@ from ...aplicacion.casos_uso import (
     ListarListasCompras,
     ListarRecetas,
     MarcarFavorita,
+    MarcarItemComprado,
+    QuitarItemDeLista,
     RestaurarReceta,
 )
 from ...aplicacion.dto import (
@@ -474,3 +476,20 @@ class ListasComprasVista(VistaBase):
     def get(self, peticion):
         """Devuelve las listas propias, no las de otros integrantes."""
         return correcto(ListarListasCompras(self.uow).ejecutar(self.solicitante_id))
+
+
+class ItemCompraVista(VistaBase):
+    """Item individual de una Lista de Compras (RF-036 y RF-037)."""
+
+    def patch(self, peticion, lista_id, item_id):
+        """Marca o desmarca el item como comprado."""
+        datos = self.validar(s.ItemCompraEntrada)
+        MarcarItemComprado(self.uow).ejecutar(
+            self.solicitante_id, lista_id, item_id, datos.get("comprado", True)
+        )
+        return correcto()
+
+    def delete(self, peticion, lista_id, item_id):
+        """Saca el producto de la lista."""
+        QuitarItemDeLista(self.uow).ejecutar(self.solicitante_id, lista_id, item_id)
+        return correcto()

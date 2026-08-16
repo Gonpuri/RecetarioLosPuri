@@ -201,6 +201,12 @@ export default function DetalleReceta() {
   const [lista, setLista] = useState<ListaCompra | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [nombresCategorias, setNombresCategorias] = useState<Record<string, string>>(
+    {},
+  );
+  const [nombresEtiquetas, setNombresEtiquetas] = useState<Record<string, string>>(
+    {},
+  );
 
   const base = receta ? Number(receta.rendimiento_base) : 0;
 
@@ -223,6 +229,32 @@ export default function DetalleReceta() {
       vigente = false;
     };
   }, [recetaId]);
+
+  // Resuelve los nombres de categorías y etiquetas para mostrarlos en la
+  // receta, no solo usarlos como filtro en el listado.
+  useEffect(() => {
+    let vigente = true;
+    Promise.all([
+      pedir<{ id: string; nombre: string }[]>("/categorias/"),
+      pedir<{ id: string; nombre: string }[]>("/etiquetas/"),
+    ])
+      .then(([categorias, etiquetas]) => {
+        if (!vigente) return;
+        setNombresCategorias(
+          Object.fromEntries(categorias.map((c) => [c.id, c.nombre])),
+        );
+        setNombresEtiquetas(
+          Object.fromEntries(etiquetas.map((e) => [e.id, e.nombre])),
+        );
+      })
+      .catch(() => {
+        // La clasificación es un detalle adicional: si no se puede cargar,
+        // el resto de la receta sigue siendo utilizable.
+      });
+    return () => {
+      vigente = false;
+    };
+  }, []);
 
   // Pide el cálculo al servidor sólo cuando el rendimiento difiere del base.
   useEffect(() => {
@@ -369,6 +401,24 @@ export default function DetalleReceta() {
             <p className="mt-1 text-sm text-tinta-tenue">
               Fuente: {receta.fuente_nombre || "sin registrar"}
             </p>
+
+            {(receta.categorias_ids.length > 0 || receta.etiquetas_ids.length > 0) && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {receta.categorias_ids.map((id) => (
+                  <span key={id} className="chip">
+                    {nombresCategorias[id] ?? "…"}
+                  </span>
+                ))}
+                {receta.etiquetas_ids.map((id) => (
+                  <span
+                    key={id}
+                    className="inline-flex items-center rounded-full border border-borde px-3 py-1 text-sm text-tinta-suave"
+                  >
+                    {nombresEtiquetas[id] ?? "…"}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
 
           <button

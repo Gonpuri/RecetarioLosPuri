@@ -14,6 +14,8 @@ from .escalado import (
     EscalarReceta,
     GenerarListaCompras,
     ListarListasCompras,
+    MarcarItemComprado,
+    QuitarItemDeLista,
 )
 from .preparaciones import (
     GestionarFotografias,
@@ -56,5 +58,7 @@ __all__ = [
     "ListarListasCompras",
     "ListarRecetas",
     "MarcarFavorita",
+    "MarcarItemComprado",
+    "QuitarItemDeLista",
     "RestaurarReceta",
 ]

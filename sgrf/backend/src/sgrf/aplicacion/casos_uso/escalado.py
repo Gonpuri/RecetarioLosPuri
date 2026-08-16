@@ -142,3 +142,43 @@ class CombinarListasCompras(CasoDeUso):
         ]
         combinada = GeneradorListaCompras().combinar(listas)
         return EnsambladorListaCompras().a_resultado(combinada)
+
+
+class MarcarItemComprado(CasoDeUso):
+    """CU-024: marca o desmarca un item de la Lista de Compras (RF-036).
+
+    A diferencia del marcado de faltantes al generar la lista (que solo
+    vive en memoria hasta que se persiste), este marcado siempre se guarda:
+    tachar un producto en el supermercado y que se pierda al recargar la
+    pantalla no tendria sentido.
+    """
+
+    def ejecutar(
+        self,
+        solicitante_id: UUID,
+        lista_id: UUID,
+        item_id: UUID,
+        comprado: bool = True,
+    ) -> None:
+        """Actualiza el estado de comprado y persiste la lista."""
+        lista = self._obtener_lista_propia(solicitante_id, lista_id)
+        lista.obtener_item(item_id).marcar_comprado(comprado)
+        with self.uow:
+            self.uow.listas_compra.guardar(lista)
+            self.uow.confirmar()
+
+
+class QuitarItemDeLista(CasoDeUso):
+    """CU-025: saca un producto de la Lista de Compras (RF-037).
+
+    Distinto de marcarlo como comprado: sirve para el caso de "esto ya no
+    hace falta comprarlo", sin que quede tachado entre los comprados.
+    """
+
+    def ejecutar(self, solicitante_id: UUID, lista_id: UUID, item_id: UUID) -> None:
+        """Elimina el item y persiste la lista resultante."""
+        lista = self._obtener_lista_propia(solicitante_id, lista_id)
+        lista.quitar_item(item_id)
+        with self.uow:
+            self.uow.listas_compra.guardar(lista)
+            self.uow.confirmar()

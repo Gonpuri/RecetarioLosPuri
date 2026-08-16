@@ -147,3 +147,20 @@ def comando_pan(familiar, fuente, harina, sal, levadura):
 def receta_creada(uow, comando_pan):
     """Receta de pan ya persistida en el repositorio."""
     return CrearReceta(uow).ejecutar(comando_pan)
+
+
+@pytest.fixture
+def lista_creada(uow, familiar, receta_creada):
+    """Lista de Compras persistida, con el ingrediente lineal seleccionado."""
+    from sgrf.aplicacion.casos_uso import GenerarListaCompras
+    from sgrf.aplicacion.dto import ComandoGenerarListaCompras
+
+    harina = receta_creada.preparaciones[0].ingredientes[0]
+    return GenerarListaCompras(uow).ejecutar(
+        ComandoGenerarListaCompras(
+            solicitante_id=familiar.id,
+            receta_id=receta_creada.id,
+            ingredientes_seleccionados=(harina.ingrediente_preparacion_id,),
+            persistir=True,
+        )
+    )

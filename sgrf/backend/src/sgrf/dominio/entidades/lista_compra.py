@@ -11,7 +11,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from uuid import UUID, uuid4
 
-from ..excepciones import ValorInvalido
+from ..excepciones import ElementoNoEncontrado, ValorInvalido
 from ..objetos_valor import Cantidad, TipoEscalado
 
 
@@ -86,3 +86,18 @@ class ListaCompra:
     def ordenar_por_nombre(self) -> None:
         """Ordena los items alfabeticamente para facilitar la compra."""
         self.items.sort(key=lambda item: item.nombre_ingrediente.lower())
+
+    def obtener_item(self, item_id: UUID) -> ItemCompra:
+        """Devuelve un item de la lista por su identidad."""
+        objetivo = next((i for i in self.items if i.id == item_id), None)
+        if objetivo is None:
+            raise ElementoNoEncontrado(f"La lista no contiene el item {item_id}.")
+        return objetivo
+
+    def quitar_item(self, item_id: UUID) -> None:
+        """Elimina un item de la lista.
+
+        Sirve para sacar de la lista un producto que ya no hace falta
+        comprar, sin necesidad de marcarlo como comprado.
+        """
+        self.items.remove(self.obtener_item(item_id))

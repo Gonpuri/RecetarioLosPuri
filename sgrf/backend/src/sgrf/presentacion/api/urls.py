@@ -114,6 +114,11 @@ urlpatterns = [
     ),
     # Listas de compras
     path("listas-compra/", r.ListasComprasVista.as_view(), name="listas_compra"),
+    path(
+        "listas-compra/<uuid:lista_id>/items/<uuid:item_id>/",
+        r.ItemCompraVista.as_view(),
+        name="item_compra",
+    ),
     # Catalogos
     path("ingredientes/", c.IngredientesVista.as_view(), name="ingredientes"),
     path("categorias/", c.CategoriasVista.as_view(), name="categorias"),

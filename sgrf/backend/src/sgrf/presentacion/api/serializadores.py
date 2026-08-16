@@ -110,6 +110,12 @@ class FavoritaEntrada(serializers.Serializer):
     favorita = serializers.BooleanField(default=True)
 
 
+class ItemCompraEntrada(serializers.Serializer):
+    """Marcado de un item de la Lista de Compras como comprado (RF-036)."""
+
+    comprado = serializers.BooleanField(default=True)
+
+
 class ReordenarEntrada(serializers.Serializer):
     """Reordenamiento de preparaciones o pasos (RF-014 y RF-022)."""
 

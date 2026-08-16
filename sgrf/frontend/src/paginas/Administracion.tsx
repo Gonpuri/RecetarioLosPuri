@@ -76,7 +76,9 @@ const AYUDA_CATALOGO: Record<string, string> = {
     "El catálogo compartido del que salen los ingredientes de las recetas. Las cantidades no se guardan acá.",
   fuentes: "De dónde viene cada receta. Toda receta necesita una.",
   categorias:
-    "Clasificación jerárquica. Elegí una categoría padre para crear una subcategoría.",
+    "Organizá las recetas en categorías. Una categoría puede tener " +
+    "subcategorías adentro: por ejemplo, 'Panadería' como categoría, y " +
+    "'Panes dulces' como subcategoría dentro de ella.",
   etiquetas: "Clasificación transversal: sin gluten, rápido, de fiesta…",
 };
 
@@ -172,7 +174,7 @@ function Catalogo({ seccion }: { seccion: Exclude<Seccion, "usuarios"> }) {
         {seccion === "categorias" && (
           <div>
             <label htmlFor="padre" className="etiqueta-campo">
-              Categoría padre (opcional)
+              ¿Va dentro de otra categoría?
             </label>
             <select
               id="padre"
@@ -180,15 +182,30 @@ function Catalogo({ seccion }: { seccion: Exclude<Seccion, "usuarios"> }) {
               value={padreId}
               onChange={(e) => setPadreId(e.target.value)}
             >
-              <option value="">Ninguna: es de primer nivel</option>
+              <option value="">No, es una categoría nueva e independiente</option>
               {elementos
                 .filter((e) => !e.categoria_padre_id)
                 .map((e) => (
                   <option key={e.id} value={e.id}>
-                    {e.nombre}
+                    Sí, va dentro de "{e.nombre}"
                   </option>
                 ))}
             </select>
+            <p className="mt-1.5 text-sm text-tinta-tenue">
+              {padreId ? (
+                <>
+                  Va a quedar como <strong>subcategoría</strong>, agrupada bajo la
+                  categoría que elegiste. Por ejemplo: "Panadería" › lo que estás
+                  creando ahora.
+                </>
+              ) : (
+                <>
+                  Dejalo así si es una categoría de primer nivel, como
+                  "Panadería" o "Postres". Después vas a poder crear
+                  subcategorías adentro de ella.
+                </>
+              )}
+            </p>
           </div>
         )}
 

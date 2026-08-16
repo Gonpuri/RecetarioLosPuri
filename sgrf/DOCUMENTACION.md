@@ -223,7 +223,8 @@ Cap. 1.7 define dos perfiles. La lectura que hace el sistema:
 | Operación | Administrador | Usuario Familiar |
 |---|---|---|
 | Gestionar usuarios | Sí | No |
-| Crear ingredientes, categorías, etiquetas, fuentes | Sí | No |
+| Crear ingredientes | Sí | Sí (decisión D-19) |
+| Crear categorías, etiquetas, fuentes | Sí | No |
 | Consultar catálogos | Sí | Sí |
 | Crear, editar, archivar recetas | Sí | Sí |
 | Escalar y generar listas | Sí | Sí |
@@ -461,14 +462,47 @@ Existe porque el proyecto se trabaja directamente en producción: conviene
 enterarse de un error antes del despliegue y no con la familia usando la
 aplicación.
 
-### Bug encontrado por las pruebas
+### Bugs encontrados por las pruebas
 
-Las pruebas del flujo completo detectaron que `Decimal.normalize()` expresa los
-enteros grandes en notación científica: al escalar 500 g al triple, el resultado
-se mostraba como **`1E+3 g`** en lugar de `1000 g`.
+**Notación científica en las cantidades.** Las pruebas del flujo completo
+detectaron que `Decimal.normalize()` expresa los enteros grandes en notación
+científica: al escalar 500 g al triple, el resultado se mostraba como
+**`1E+3 g`** en lugar de `1000 g`. Corregido en el momento, con pruebas de
+regresión.
 
-Corregido en `Cantidad._normalizar`, con dos pruebas de regresión. Es el tipo de
-error que sólo aparece ejercitando el recorrido de punta a punta.
+**El rendimiento se leía como miles.** Reportado en producción: una receta de
+"50 porciones" se mostraba como "50000" en la tarjeta del listado. La causa:
+PostgreSQL devuelve siempre la precisión completa de la columna
+(`decimal_places=3`), así que un rendimiento guardado como 50 vuelve de la base
+como `Decimal('50.000')`. El dato interno era correcto, pero en formato
+argentino el punto es separador de miles — "50.000" se lee como cincuenta mil.
+
+El arreglo de notación científica se había aplicado únicamente a `Cantidad`,
+nunca a `Rendimiento`, que es donde vivía este caso. Ahora ambos comparten la
+misma normalización (`objetos_valor/_decimal.py`), así que la corrección no
+puede volver a aplicarse de un lado y olvidarse del otro.
+
+Ninguna prueba existente lo había detectado porque comparaba con `==`, y
+`Decimal("4") == Decimal("4.000")` da `True` en Python: la igualdad ignora los
+ceros de más. El problema era exclusivamente de **texto mostrado**. Se agregaron
+pruebas que comparan `str()` en las tres capas — dominio, persistencia y API —
+para que un problema de visualización no vuelva a esconderse detrás de una
+comparación numérica que no lo detecta.
+
+**`CLOUDINARY_URL` con el correo pegado en vez del nombre de cuenta.** Reportado
+en producción: la subida de fotos fallaba con un error de CORS apuntando a
+`api.cloudinary.com/v1_1/gmail.com/...`. La causa: el valor de la variable tenía
+dos `@` en vez de uno (se había pegado el correo de la cuenta donde iba el
+"Cloud name" del Dashboard), y la biblioteca de Cloudinary toma todo lo que
+sigue al último `@` como nombre de cuenta — en este caso, `gmail.com`.
+
+La primera versión de la validación sólo chequeaba el prefijo `cloudinary://`,
+así que no detectaba este caso: el valor mal armado igual empezaba bien. Se
+extrajo la validación a `config/validacion_cloudinary.py`, con una función pura
+testeable sin Django, que ahora también verifica que haya un único `@` y que
+existan las dos partes separadas por `:` (clave y secreto). Cinco pruebas en
+`tests/config/` cubren el formato correcto y los errores más frecuentes,
+incluido este exacto.
 
 ---
 
@@ -555,6 +589,7 @@ Estas resuelven puntos que el análisis no detalla. Se documentan porque
 | D-16 | Admin de Django: recetas en sólo lectura | Editarlas ahí saltearía las validaciones |
 | D-17 | El marcado de "comprado" no se persiste | El análisis no lo pide |
 | D-18 | Las listas de compras son personales | Cap. 1.5 comparte el recetario, no las listas |
+| D-19 | Cualquier usuario activo crea ingredientes; categorías y fuentes siguen siendo del administrador | Evita que cargar una receta dependa de un tercero; el resto de los catálogos define la clasificación de todo el recetario |
 
 ---
 

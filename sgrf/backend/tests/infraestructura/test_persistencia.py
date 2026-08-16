@@ -121,6 +121,19 @@ class TestViajeDeIdaYVuelta:
         assert recuperada.rendimiento_base.valor == Decimal("4")
         assert recuperada.rendimiento_base.descripcion == "porciones"
 
+    def test_el_rendimiento_no_muestra_ceros_sobrantes_tras_guardar(
+        self, uow, comando_pan
+    ):
+        """PostgreSQL devuelve siempre la precision completa de la columna:
+        un rendimiento de 4 vuelve como Decimal('4.000'). Como en formato
+        argentino el punto es separador de miles, mostrar ese texto tal
+        cual haria leer "4.000" como cuatro mil. La igualdad con Decimal no
+        detecta esto (4 == 4.000 da verdadero); hace falta comparar texto.
+        """
+        creada = CrearReceta(uow).ejecutar(comando_pan)
+        recuperada = uow.recetas.obtener(creada.id)
+        assert str(recuperada.rendimiento_base.valor) == "4"
+
     def test_conserva_las_preparaciones_y_su_orden(self, uow, comando_pan):
         creada = CrearReceta(uow).ejecutar(comando_pan)
         recuperada = uow.recetas.obtener(creada.id)

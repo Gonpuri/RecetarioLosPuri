@@ -18,6 +18,8 @@ from sgrf.aplicacion.casos_uso import (
     EscalarReceta,
     GenerarListaCompras,
     GestionarCatalogoIngredientes,
+    GestionarCategorias,
+    GestionarFuentes,
     GestionarPreparaciones,
     GestionarUsuarios,
     ListarRecetas,
@@ -305,15 +307,25 @@ class TestPermisos:
         with pytest.raises(ConflictoDeDatos):
             GestionarUsuarios(uow).desactivar(administrador.id, administrador.id)
 
-    def test_familiar_no_administra_el_catalogo(self, uow, familiar):
-        with pytest.raises(PermisoDenegado):
-            GestionarCatalogoIngredientes(uow).crear(familiar.id, "Azucar")
+    def test_familiar_crea_ingredientes(self, uow, familiar):
+        """Decision D-19: cualquier usuario activo puede sumar un ingrediente."""
+        identidad = GestionarCatalogoIngredientes(uow).crear(familiar.id, "Azucar")
+        assert uow.ingredientes.obtener(identidad) is not None
 
     def test_administrador_crea_ingredientes(self, uow, administrador):
         identidad = GestionarCatalogoIngredientes(uow).crear(
             administrador.id, "Azucar"
         )
         assert uow.ingredientes.obtener(identidad) is not None
+
+    def test_familiar_no_crea_categorias(self, uow, familiar):
+        """Categorias, Etiquetas y Fuentes siguen reservadas al Administrador."""
+        with pytest.raises(PermisoDenegado):
+            GestionarCategorias(uow).crear(familiar.id, "Panaderia")
+
+    def test_familiar_no_crea_fuentes(self, uow, familiar):
+        with pytest.raises(PermisoDenegado):
+            GestionarFuentes(uow).crear(familiar.id, "Internet")
 
     def test_no_se_duplican_ingredientes(self, uow, administrador, harina):
         with pytest.raises(ConflictoDeDatos):

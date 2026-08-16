@@ -8,9 +8,6 @@ formado.
 
 from __future__ import annotations
 
-from decimal import Decimal
-
-
 from rest_framework import serializers
 
 TIPOS_ESCALADO = ["lineal", "fijo", "a_gusto", "cantidad_necesaria"]
@@ -83,7 +80,7 @@ class EscalarEntrada(serializers.Serializer):
     """Solicitud de escalado (RF-031)."""
 
     rendimiento_objetivo = serializers.DecimalField(
-        max_digits=10, decimal_places=3, min_value=Decimal("0")
+        max_digits=10, decimal_places=3, min_value=0
     )
     rendimiento_descripcion = serializers.CharField(max_length=50, required=False)
 

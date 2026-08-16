@@ -95,14 +95,23 @@ class GestionarUsuarios(CasoDeUso):
 
 
 class GestionarCatalogoIngredientes(CasoDeUso):
-    """CU-017: catalogo reutilizable de Ingredientes (RF-015)."""
+    """CU-017: catalogo reutilizable de Ingredientes (RF-015).
+
+    Decision D-19: a diferencia del resto de los catalogos, cualquier
+    usuario activo puede dar de alta un Ingrediente, no solo el
+    Administrador. Se habilita para que quien carga una receta no dependa
+    de un tercero cuando el ingrediente que necesita todavia no existe.
+    Categorias, Etiquetas y Fuentes siguen reservadas al Administrador
+    (decision D-9): a diferencia de un ingrediente puntual, definen la
+    clasificacion del recetario completo.
+    """
 
     def crear(
         self, solicitante_id: UUID, nombre: str, descripcion: str = ""
     ) -> UUID:
         """Da de alta un Ingrediente en el catalogo."""
         solicitante = self._obtener_usuario(solicitante_id)
-        self.autorizacion.asegurar_administrador(solicitante)
+        self.autorizacion.asegurar_puede_gestionar_recetas(solicitante)
 
         if self._existe_con_nombre(nombre):
             raise ConflictoDeDatos(f"Ya existe el ingrediente '{nombre}'.")

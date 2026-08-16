@@ -20,6 +20,7 @@ import {
   type TipoEscalado,
 } from "../api/tipos";
 import { Aviso } from "../componentes/Comunes";
+import SelectorIngrediente from "../componentes/SelectorIngrediente";
 
 interface IngredienteBorrador {
   ingrediente_id: string;
@@ -286,23 +287,18 @@ export default function NuevaReceta() {
                   className="space-y-2 rounded-pieza border border-borde p-3"
                 >
                   <div className="flex gap-2">
-                    <select
-                      className="campo flex-1"
-                      value={ingrediente.ingrediente_id}
-                      onChange={(e) =>
+                    <SelectorIngrediente
+                      ingredientes={ingredientes}
+                      valor={ingrediente.ingrediente_id}
+                      onCambiar={(id) =>
                         actualizarIngrediente(indicePreparacion, indiceIngrediente, {
-                          ingrediente_id: e.target.value,
+                          ingrediente_id: id,
                         })
                       }
-                      aria-label="Ingrediente"
-                    >
-                      <option value="">Elegí un ingrediente…</option>
-                      {ingredientes.map((item) => (
-                        <option key={item.id} value={item.id}>
-                          {item.nombre}
-                        </option>
-                      ))}
-                    </select>
+                      onCreado={(nuevo) =>
+                        setIngredientes((previos) => [...previos, nuevo])
+                      }
+                    />
 
                     {preparacion.ingredientes.length > 1 && (
                       <button

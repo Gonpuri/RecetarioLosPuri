@@ -155,21 +155,35 @@ if DEBUG and not CORS_ALLOWED_ORIGINS:
 
 # --- Fotografias -----------------------------------------------------------
 
-# El filesystem de Render es efimero: lo que se sube se pierde en cada
-# redespliegue. Por eso las imagenes se almacenan fuera de la aplicacion.
+# El almacenamiento de fotografias es opcional: si la variable falta o esta
+# mal formada, el sistema arranca igual y solo se deshabilita la subida de
+# imagenes. Una funcion accesoria mal configurada no debe impedir que la
+# familia acceda a sus recetas.
+from .validacion_cloudinary import es_url_cloudinary_valida  # noqa: E402
+
 CLOUDINARY_URL = variable("CLOUDINARY_URL").strip()
 
-if CLOUDINARY_URL and not CLOUDINARY_URL.startswith("cloudinary://"):
+if CLOUDINARY_URL and not es_url_cloudinary_valida(CLOUDINARY_URL):
     import logging
 
     logging.getLogger(__name__).warning(
-        "CLOUDINARY_URL mal formada: debe comenzar con 'cloudinary://'. "
-        "Se deshabilita la subida de fotografias."
+        "CLOUDINARY_URL mal formada: se esperaba "
+        "'cloudinary://API_KEY:API_SECRET@NOMBRE_DE_CUENTA' con un unico "
+        "'@'. Revisa que no se haya pegado un correo electronico en el "
+        "lugar del nombre de cuenta. Se deshabilita la subida de "
+        "fotografias."
     )
     # La biblioteca lee la variable del entorno al importarse y falla si el
     # formato es invalido, de modo que se la retira antes de continuar.
     os.environ.pop("CLOUDINARY_URL", None)
     CLOUDINARY_URL = ""
+elif CLOUDINARY_URL:
+    # La biblioteca de Cloudinary lee CLOUDINARY_URL directamente de
+    # os.environ al importarse, no de esta variable de Django. Se
+    # sincroniza el valor ya limpio (sin espacios ni saltos de linea que
+    # pudieran colarse al copiar desde el Dashboard) para que ambos lean
+    # exactamente lo mismo que ya se valido.
+    os.environ["CLOUDINARY_URL"] = CLOUDINARY_URL
 
 if CLOUDINARY_URL:
     # La biblioteca se configura sola leyendo CLOUDINARY_URL del entorno.

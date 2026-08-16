@@ -8,12 +8,11 @@ sostiene la regla RN-004 (la receta base nunca se modifica).
 from __future__ import annotations
 
 from dataclasses import dataclass
-from decimal import Decimal, ROUND_HALF_UP
+from decimal import Decimal
 
 from ..excepciones import UnidadesIncompatibles, ValorInvalido
+from ._decimal import normalizar_decimal_legible
 from .unidad import Unidad
-
-PRECISION_DECIMAL = Decimal("0.001")
 
 
 @dataclass(frozen=True)
@@ -28,21 +27,7 @@ class Cantidad:
             object.__setattr__(self, "valor", Decimal(str(self.valor)))
         if self.valor < 0:
             raise ValorInvalido("La cantidad no puede ser negativa.")
-        object.__setattr__(self, "valor", self._normalizar(self.valor))
-
-    @staticmethod
-    def _normalizar(valor: Decimal) -> Decimal:
-        """Redondea a la precision del dominio y descarta ceros sobrantes.
-
-        `normalize()` expresa los enteros grandes en notacion cientifica
-        (1000 se convierte en 1E+3), ilegible para quien cocina. Por eso los
-        valores enteros se reexpresan en notacion posicional.
-        """
-        redondeado = valor.quantize(PRECISION_DECIMAL, rounding=ROUND_HALF_UP)
-        sin_ceros = redondeado.normalize()
-        if sin_ceros == sin_ceros.to_integral_value():
-            return sin_ceros.quantize(Decimal(1))
-        return sin_ceros
+        object.__setattr__(self, "valor", normalizar_decimal_legible(self.valor))
 
     def escalar(self, factor: Decimal) -> Cantidad:
         """Devuelve una nueva Cantidad multiplicada por el factor indicado."""

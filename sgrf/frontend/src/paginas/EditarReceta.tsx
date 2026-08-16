@@ -27,6 +27,7 @@ import {
 } from "../api/tipos";
 import { Aviso, Cargando } from "../componentes/Comunes";
 import Reordenar, { moverElemento } from "../componentes/Reordenar";
+import SelectorIngrediente from "../componentes/SelectorIngrediente";
 import SubirFotografia from "../componentes/SubirFotografia";
 
 const MAXIMO_PROCESO = 2;
@@ -157,6 +158,9 @@ export default function EditarReceta() {
           indice={indice}
           total={receta.preparaciones.length}
           ingredientes={ingredientes}
+          onIngredienteCreado={(nuevo) =>
+            setIngredientes((previos) => [...previos, nuevo])
+          }
           puedeEliminar={receta.preparaciones.length > 1}
           tiposDisponibles={tiposDisponibles}
           operar={operar}
@@ -324,6 +328,7 @@ function BloqueEdicion({
   indice,
   total,
   ingredientes,
+  onIngredienteCreado,
   puedeEliminar,
   tiposDisponibles,
   operar,
@@ -335,6 +340,7 @@ function BloqueEdicion({
   indice: number;
   total: number;
   ingredientes: ElementoCatalogo[];
+  onIngredienteCreado: (nuevo: ElementoCatalogo) => void;
   puedeEliminar: boolean;
   tiposDisponibles: TipoFotografia[];
   operar: Operar;
@@ -398,6 +404,7 @@ function BloqueEdicion({
         <AgregarIngrediente
           base={base}
           ingredientes={ingredientes}
+          onCreado={onIngredienteCreado}
           operar={operar}
         />
       </div>
@@ -671,10 +678,12 @@ function RenglonIngrediente({
 function AgregarIngrediente({
   base,
   ingredientes,
+  onCreado,
   operar,
 }: {
   base: string;
   ingredientes: ElementoCatalogo[];
+  onCreado: (nuevo: ElementoCatalogo) => void;
   operar: Operar;
 }) {
   const [ingredienteId, setIngredienteId] = useState("");
@@ -686,19 +695,12 @@ function AgregarIngrediente({
 
   return (
     <div className="space-y-2 rounded-pieza border border-dashed border-borde p-3">
-      <select
-        className="campo"
-        value={ingredienteId}
-        onChange={(e) => setIngredienteId(e.target.value)}
-        aria-label="Ingrediente a agregar"
-      >
-        <option value="">Agregar un ingrediente…</option>
-        {ingredientes.map((item) => (
-          <option key={item.id} value={item.id}>
-            {item.nombre}
-          </option>
-        ))}
-      </select>
+      <SelectorIngrediente
+        ingredientes={ingredientes}
+        valor={ingredienteId}
+        onCambiar={setIngredienteId}
+        onCreado={onCreado}
+      />
 
       {ingredienteId && (
         <>

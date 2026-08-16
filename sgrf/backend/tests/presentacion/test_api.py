@@ -132,6 +132,28 @@ class TestRecetas:
         ingrediente = respuesta.data["preparaciones"][0]["ingredientes"][0]
         assert isinstance(ingrediente["cantidad"], str)
 
+    def test_el_rendimiento_no_se_lee_como_miles(self, familiar, catalogo):
+        """Bug reportado: la tarjeta de receta mostraba "50 porciones" como
+        "50000". PostgreSQL devuelve la columna con su precision completa
+        (50.000) y, como en Argentina el punto es separador de miles, ese
+        texto se lee como cincuenta mil. La API debe devolver "50", no
+        "50.000" ni "50000".
+        """
+        cuerpo = cuerpo_receta(catalogo)
+        cuerpo["rendimiento_base"] = "50"
+        cliente = autenticar(familiar)
+        creada = cliente.post("/api/recetas/", cuerpo, format="json")
+        assert creada.data["rendimiento_base"] == "50"
+
+        # La tarjeta del listado usa el mismo campo: debe coincidir.
+        listado = cliente.get("/api/recetas/")
+        resumen = next(r for r in listado.data if r["id"] == creada.data["id"])
+        assert resumen["rendimiento_base"] == "50"
+
+        # Y tiene que sobrevivir tambien a una relectura desde la base.
+        recuperada = cliente.get(f"/api/recetas/{creada.data['id']}/")
+        assert recuperada.data["rendimiento_base"] == "50"
+
     def test_los_ingredientes_a_gusto_traen_su_texto(self, familiar, catalogo):
         respuesta = autenticar(familiar).post(
             "/api/recetas/", cuerpo_receta(catalogo), format="json"
@@ -288,19 +310,36 @@ class TestListaComprasApi:
 
 
 class TestPermisosApi:
-    """Decision D-9: catalogos y usuarios solo para el Administrador."""
+    """Decision D-9 y D-19: catalogos y usuarios, segun el tipo.
 
-    def test_familiar_no_crea_ingredientes(self, familiar):
+    Los ingredientes los puede crear cualquier usuario activo (D-19). El
+    resto de los catalogos y la gestion de usuarios siguen reservados al
+    Administrador (D-9).
+    """
+
+    def test_familiar_crea_ingredientes(self, familiar):
         respuesta = autenticar(familiar).post(
             "/api/ingredientes/", {"nombre": "Azucar"}, format="json"
         )
-        assert respuesta.status_code == 403
+        assert respuesta.status_code == 201
 
     def test_administrador_crea_ingredientes(self, administrador):
         respuesta = autenticar(administrador).post(
             "/api/ingredientes/", {"nombre": "Azucar"}, format="json"
         )
         assert respuesta.status_code == 201
+
+    def test_familiar_no_crea_categorias(self, familiar):
+        respuesta = autenticar(familiar).post(
+            "/api/categorias/", {"nombre": "Panaderia"}, format="json"
+        )
+        assert respuesta.status_code == 403
+
+    def test_familiar_no_crea_fuentes(self, familiar):
+        respuesta = autenticar(familiar).post(
+            "/api/fuentes/", {"nombre": "Internet"}, format="json"
+        )
+        assert respuesta.status_code == 403
 
     def test_familiar_consulta_el_catalogo(self, familiar, catalogo):
         respuesta = autenticar(familiar).get("/api/ingredientes/")

@@ -11,6 +11,7 @@ pueda reutilizarse para subir cualquier cosa a la cuenta.
 
 from __future__ import annotations
 
+import logging
 import time
 
 from django.conf import settings
@@ -22,6 +23,8 @@ CARPETA = "sgrf/recetas"
 FORMATOS_ADMITIDOS = "jpg,jpeg,png,webp"
 VIGENCIA_SEGUNDOS = 3600
 
+registro = logging.getLogger(__name__)
+
 
 class FirmaFotografiaVista(VistaBase):
     """Entrega los datos necesarios para subir una imagen a Cloudinary."""
@@ -30,7 +33,11 @@ class FirmaFotografiaVista(VistaBase):
         """Devuelve la firma de una subida.
 
         Si Cloudinary no esta configurado responde 503 con una indicacion
-        concreta, en lugar de fallar de forma opaca al subir.
+        concreta. Si la configuracion esta cargada pero la biblioteca de
+        Cloudinary falla al usarla (credenciales invalidas, cuenta
+        inexistente), responde 502 con el motivo en lugar de un 500 opaco:
+        un problema de una integracion externa se distingue de un error
+        interno del sistema.
         """
         import cloudinary
         import cloudinary.utils
@@ -46,18 +53,39 @@ class FirmaFotografiaVista(VistaBase):
                 status=503,
             )
 
-        configuracion = cloudinary.config()
-        marca_temporal = int(time.time())
+        try:
+            configuracion = cloudinary.config()
+            if not (
+                configuracion.cloud_name
+                and configuracion.api_key
+                and configuracion.api_secret
+            ):
+                raise ValueError(
+                    "La configuracion de Cloudinary quedo incompleta al "
+                    "iniciar el servidor."
+                )
 
-        parametros = {
-            "timestamp": marca_temporal,
-            "folder": CARPETA,
-            "allowed_formats": FORMATOS_ADMITIDOS,
-        }
-
-        firma = cloudinary.utils.api_sign_request(
-            parametros, configuracion.api_secret
-        )
+            marca_temporal = int(time.time())
+            parametros = {
+                "timestamp": marca_temporal,
+                "folder": CARPETA,
+                "allowed_formats": FORMATOS_ADMITIDOS,
+            }
+            firma = cloudinary.utils.api_sign_request(
+                parametros, configuracion.api_secret
+            )
+        except Exception as fallo:
+            registro.error("No se pudo generar la firma de Cloudinary.", exc_info=fallo)
+            return Response(
+                {
+                    "error": (
+                        "No se pudo preparar la subida de la fotografía. "
+                        "Revisá que CLOUDINARY_URL tenga las credenciales "
+                        "correctas en el servidor."
+                    )
+                },
+                status=502,
+            )
 
         return Response(
             {

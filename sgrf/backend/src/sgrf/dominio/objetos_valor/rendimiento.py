@@ -11,6 +11,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 from ..excepciones import ValorInvalido
+from ._decimal import normalizar_decimal_legible
 
 DESCRIPCION_POR_DEFECTO = "porciones"
 
@@ -27,6 +28,7 @@ class Rendimiento:
             object.__setattr__(self, "valor", Decimal(str(self.valor)))
         if self.valor <= 0:
             raise ValorInvalido("El rendimiento debe ser mayor que cero.")
+        object.__setattr__(self, "valor", normalizar_decimal_legible(self.valor))
         descripcion = self.descripcion.strip()
         if not descripcion:
             raise ValorInvalido("El rendimiento requiere una descripcion.")

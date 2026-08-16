@@ -91,6 +91,23 @@ class TestRendimiento:
         with pytest.raises(ValorInvalido):
             Rendimiento(4, "porciones").factor_hacia(Rendimiento(2, "tortas"))
 
+    def test_no_muestra_ceros_sobrantes_al_volver_de_la_base(self):
+        """PostgreSQL devuelve siempre la precision completa de la columna:
+        un rendimiento guardado como 50 vuelve como Decimal('50.000'). En
+        formato argentino el punto es separador de miles, asi que mostrar
+        ese texto tal cual haria leer "50.000" como cincuenta mil.
+        """
+        recuperado = Rendimiento(Decimal("50.000"), "porciones")
+        assert str(recuperado.valor) == "50"
+
+    def test_nunca_usa_notacion_cientifica(self):
+        grande = Rendimiento(Decimal("1000.000"), "porciones")
+        assert str(grande.valor) == "1000"
+
+    def test_conserva_decimales_reales(self):
+        con_decimales = Rendimiento(Decimal("4.5"), "kg")
+        assert str(con_decimales.valor) == "4.5"
+
 
 class TestTipoEscalado:
     """TipoEscalado: comportamiento de cada ingrediente al escalar."""

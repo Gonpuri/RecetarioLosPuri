@@ -54,6 +54,47 @@ class TestEscalarReceta:
         assert resultado.factor == Decimal("2")
         assert harina.cantidad == Decimal("1000")
 
+    def test_los_pasos_no_desaparecen_al_escalar(self, uow, familiar, receta_creada):
+        """Bug reportado: al ajustar el rendimiento, los pasos y las fotos
+        desaparecian de la pantalla. El calculo de escalado solo recalcula
+        cantidades; pasos y fotos no dependen del rendimiento y deben
+        copiarse desde la receta original.
+        """
+        comando = ComandoEscalarReceta(
+            solicitante_id=familiar.id,
+            receta_id=receta_creada.id,
+            rendimiento_objetivo=Decimal("8"),
+        )
+        resultado = EscalarReceta(uow).ejecutar(comando)
+        assert len(resultado.preparaciones[0].pasos) == 2
+        assert resultado.preparaciones[0].pasos[0].descripcion == "Mezclar los secos."
+
+    def test_las_fotografias_no_desaparecen_al_escalar(
+        self, uow, familiar, receta_creada
+    ):
+        """Mismo bug que los pasos, para las fotografias."""
+        from sgrf.aplicacion.casos_uso import GestionarFotografias
+
+        preparacion_id = receta_creada.preparaciones[0].id
+        GestionarFotografias(uow).agregar(
+            familiar.id,
+            receta_creada.id,
+            preparacion_id,
+            ruta="https://cdn.test/final.jpg",
+            tipo="final",
+        )
+
+        comando = ComandoEscalarReceta(
+            solicitante_id=familiar.id,
+            receta_id=receta_creada.id,
+            rendimiento_objetivo=Decimal("8"),
+        )
+        resultado = EscalarReceta(uow).ejecutar(comando)
+        assert len(resultado.preparaciones[0].fotografias) == 1
+        assert resultado.preparaciones[0].fotografias[0].ruta == (
+            "https://cdn.test/final.jpg"
+        )
+
     def test_conserva_los_ingredientes_fijos(self, uow, familiar, receta_creada):
         comando = ComandoEscalarReceta(
             solicitante_id=familiar.id,

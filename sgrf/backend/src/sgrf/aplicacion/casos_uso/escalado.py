@@ -45,6 +45,7 @@ class EscalarReceta(CasoDeUso):
         escalada = EscaladorRecetas().escalar(receta, objetivo)
 
         return EnsambladorRecetas().a_resultado_escalado(
+            receta,
             escalada,
             self._nombres_de_ingredientes(receta.ingredientes_utilizados()),
         )

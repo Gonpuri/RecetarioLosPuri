@@ -163,6 +163,29 @@ function BloquePreparacion({
           ))}
         </ol>
       )}
+
+      {preparacion.fotografias.length > 0 && (
+        <div className="flex gap-2 overflow-x-auto border-t border-borde px-4 py-3">
+          {preparacion.fotografias
+            .filter((foto) => foto.tipo === "proceso")
+            .map((foto) => (
+              <a
+                key={foto.id}
+                href={foto.ruta}
+                target="_blank"
+                rel="noreferrer"
+                className="shrink-0"
+              >
+                <img
+                  src={foto.ruta}
+                  alt={foto.descripcion || `Foto del proceso de ${preparacion.nombre}`}
+                  loading="lazy"
+                  className="h-20 w-20 rounded-pieza object-cover"
+                />
+              </a>
+            ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -229,6 +252,14 @@ export default function DetalleReceta() {
   const preparaciones = useMemo(
     () => escalada?.preparaciones ?? receta?.preparaciones ?? [],
     [escalada, receta],
+  );
+
+  const fotoFinal = useMemo(
+    () =>
+      preparaciones
+        .flatMap((p) => p.fotografias)
+        .find((foto) => foto.tipo === "final"),
+    [preparaciones],
   );
 
   const alternar = useCallback((id: string) => {
@@ -357,6 +388,14 @@ export default function DetalleReceta() {
       </div>
 
       {error && <Aviso>{error}</Aviso>}
+
+      {fotoFinal && (
+        <img
+          src={fotoFinal.ruta}
+          alt={fotoFinal.descripcion || `Foto final de ${receta.nombre}`}
+          className="h-56 w-full rounded-pieza object-cover sm:h-72"
+        />
+      )}
 
       {rendimiento !== null && (
         <Rendimiento

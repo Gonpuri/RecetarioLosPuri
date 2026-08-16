@@ -250,6 +250,36 @@ class TestEscaladoApi:
         harina = respuesta.data["preparaciones"][0]["ingredientes"][0]
         assert harina["texto_cantidad"] == "1000 g"
 
+    def test_los_pasos_y_las_fotos_se_ven_al_escalar(self, familiar, catalogo):
+        """Bug reportado en producción: al ajustar el rendimiento, la
+        pantalla se quedaba solo con los ingredientes; pasos y fotos
+        desaparecían porque el escalado no los copiaba desde la receta
+        original.
+        """
+        cliente = autenticar(familiar)
+        creada = cliente.post(
+            "/api/recetas/", cuerpo_receta(catalogo), format="json"
+        )
+        receta_id = creada.data["id"]
+        preparacion_id = creada.data["preparaciones"][0]["id"]
+        cliente.post(
+            f"/api/recetas/{receta_id}/preparaciones/{preparacion_id}/fotografias/",
+            {"ruta": "https://cdn.test/final.jpg", "tipo": "final"},
+            format="json",
+        )
+
+        respuesta = cliente.post(
+            f"/api/recetas/{receta_id}/escalar/",
+            {"rendimiento_objetivo": "8"},
+            format="json",
+        )
+        preparacion_escalada = respuesta.data["preparaciones"][0]
+        assert len(preparacion_escalada["pasos"]) == 2
+        assert len(preparacion_escalada["fotografias"]) == 1
+        assert preparacion_escalada["fotografias"][0]["ruta"] == (
+            "https://cdn.test/final.jpg"
+        )
+
     def test_la_receta_almacenada_no_cambia(self, familiar, catalogo):
         cliente = autenticar(familiar)
         creada = cliente.post(

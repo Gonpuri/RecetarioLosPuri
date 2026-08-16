@@ -47,6 +47,36 @@ export function Aviso({
   );
 }
 
+/** Ícono decorativo para los estados vacíos: un bowl con vapor, tibio y simple. */
+function IconoPlato() {
+  return (
+    <svg viewBox="0 0 48 48" className="h-10 w-10" aria-hidden="true">
+      <path
+        d="M10 24c0 8 6.5 13 14 13s14-5 14-13H10z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M6 24h36"
+        stroke="currentColor"
+        strokeWidth="2.2"
+        strokeLinecap="round"
+      />
+      <path
+        d="M20 15c-1.5-2-1.5-4 0-6M28 15c-1.5-2-1.5-4 0-6"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        opacity="0.6"
+      />
+    </svg>
+  );
+}
+
 /** Pantalla vacía. El Capítulo 6.12 la trata como una invitación a actuar. */
 export function Vacio({
   titulo,
@@ -59,7 +89,10 @@ export function Vacio({
 }) {
   return (
     <div className="tarjeta px-6 py-14 text-center">
-      <h2 className="text-lg font-semibold text-tinta">{titulo}</h2>
+      <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-calido-claro text-calido-oscuro">
+        <IconoPlato />
+      </div>
+      <h2 className="mt-4 text-lg font-semibold text-tinta">{titulo}</h2>
       <p className="mx-auto mt-2 max-w-sm text-tinta-suave">{descripcion}</p>
       {accion && <div className="mt-6">{accion}</div>}
     </div>

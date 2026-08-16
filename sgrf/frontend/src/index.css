@@ -10,7 +10,20 @@
   }
 
   body {
-    @apply bg-papel text-tinta antialiased;
+    @apply text-tinta antialiased;
+    background-color: #fbf7f0;
+    /* Textura muy sutil -manchas circulares tenues- para que el fondo no
+       se sienta plano ni de panel administrativo. Se nota apenas, a
+       proposito: es ambiente, no decoracion que compita con el contenido. */
+    background-image:
+      radial-gradient(circle at 8% 12%, rgba(193, 98, 45, 0.05), transparent 40%),
+      radial-gradient(circle at 92% 78%, rgba(11, 95, 165, 0.04), transparent 42%);
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2 {
+    @apply font-titulo;
   }
 
   /* Capitulo 6.9: foco visible para navegacion por teclado. */
@@ -32,21 +45,22 @@
 @layer components {
   .boton-primario {
     @apply inline-flex items-center justify-center gap-2 rounded-pieza bg-azul
-           px-5 py-3 font-semibold text-white transition-colors
-           hover:bg-azul-oscuro disabled:cursor-not-allowed disabled:opacity-50;
+           px-5 py-3 font-semibold text-white shadow-sm transition-all
+           hover:bg-azul-oscuro hover:shadow-md
+           disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none;
   }
 
   .boton-secundario {
     @apply inline-flex items-center justify-center gap-2 rounded-pieza
            border border-borde bg-white px-5 py-3 font-medium text-tinta
-           transition-colors hover:border-azul hover:text-azul
+           transition-colors hover:border-calido hover:text-calido-oscuro
            disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .campo {
     @apply w-full rounded-pieza border border-borde bg-white px-4 py-3
            text-base text-tinta transition-colors placeholder:text-tinta-tenue
-           focus:border-azul focus:outline-none focus:ring-2 focus:ring-azul/25;
+           focus:border-azul focus:outline-none focus:ring-2 focus:ring-azul/20;
   }
 
   .etiqueta-campo {
@@ -54,11 +68,11 @@
   }
 
   .tarjeta {
-    @apply rounded-pieza border border-borde bg-white shadow-tarjeta;
+    @apply rounded-generosa border border-borde bg-white shadow-tarjeta;
   }
 
   .chip {
-    @apply inline-flex items-center rounded-full bg-azul-claro px-3 py-1
-           text-sm font-medium text-azul-oscuro;
+    @apply inline-flex items-center rounded-full bg-calido-claro px-3 py-1
+           text-sm font-medium text-calido-oscuro;
   }
 }

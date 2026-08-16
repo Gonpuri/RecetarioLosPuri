@@ -41,8 +41,17 @@ export default function Ingresar() {
   return (
     <div className="mx-auto mt-10 max-w-sm">
       <div className="mb-8 text-center">
-        <span className="mx-auto grid h-14 w-14 place-items-center rounded-pieza bg-azul text-2xl font-bold text-white">
-          R
+        <span className="mx-auto grid h-14 w-14 place-items-center rounded-pieza bg-azul text-white">
+          <svg viewBox="0 0 24 24" className="h-7 w-7" aria-hidden="true">
+            <path
+              d="M8 3v7a3 3 0 006 0V3M11 3v7M8 3h6M11 10v11"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </span>
         <h1 className="mt-4 text-2xl font-semibold tracking-tight">
           Recetario familiar

@@ -42,10 +42,21 @@ function Navegacion() {
     <header className="sticky top-0 z-20 border-b border-borde bg-white/95 backdrop-blur">
       <div className="mx-auto flex max-w-4xl items-center gap-4 px-4 py-3">
         <NavLink to="/recetas" className="mr-auto flex items-center gap-2">
-          <span className="grid h-9 w-9 place-items-center rounded-pieza bg-azul text-lg font-bold text-white">
-            R
+          <span className="grid h-9 w-9 place-items-center rounded-pieza bg-azul text-white">
+            <svg viewBox="0 0 24 24" className="h-5 w-5" aria-hidden="true">
+              <path
+                d="M8 3v7a3 3 0 006 0V3M11 3v7M8 3h6M11 10v11"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </span>
-          <span className="text-lg font-semibold tracking-tight">Recetario</span>
+          <span className="font-titulo text-lg font-semibold tracking-tight text-tinta">
+            Recetario
+          </span>
         </NavLink>
 
         <nav className="hidden items-center gap-1 sm:flex">

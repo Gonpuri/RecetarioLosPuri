@@ -23,8 +23,13 @@ MAXIMO_PAGINAS = 30
 class ExtractorTextoPdf(ExtractorTexto):
     """Extrae el texto de un PDF pagina por pagina."""
 
-    def extraer(self, contenido: bytes) -> str:
-        """Devuelve el texto de todas las paginas, separado por saltos de linea."""
+    def extraer(self, contenido: bytes, nombre_archivo: str = "archivo.pdf") -> str:
+        """Devuelve el texto de todas las paginas, separado por saltos de linea.
+
+        `nombre_archivo` no se usa: un PDF siempre se abre igual sin
+        importar como se llame. Esta implementacion lo acepta solo para
+        cumplir la interfaz compartida con el extractor de fotos.
+        """
         if len(contenido) > TAMANIO_MAXIMO_BYTES:
             raise ServicioNoDisponible(
                 "El PDF supera los 15 MB. Probá con un archivo más liviano."

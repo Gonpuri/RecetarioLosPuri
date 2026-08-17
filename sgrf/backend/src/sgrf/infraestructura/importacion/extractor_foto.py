@@ -29,8 +29,14 @@ class ExtractorTextoOcrSpace(ExtractorTexto):
     def __init__(self, api_key: str) -> None:
         self._api_key = api_key
 
-    def extraer(self, contenido: bytes) -> str:
-        """Sube la imagen a OCR.space y devuelve el texto reconocido."""
+    def extraer(self, contenido: bytes, nombre_archivo: str = "foto.jpg") -> str:
+        """Sube la imagen a OCR.space y devuelve el texto reconocido.
+
+        El nombre real del archivo importa: OCR.space infiere el formato
+        (JPEG, PNG, etc.) a partir de la extension, no del contenido. Un
+        nombre generico incorrecto hace que rechace archivos que no son
+        JPEG.
+        """
         if len(contenido) > TAMANIO_MAXIMO_BYTES:
             raise ServicioNoDisponible(
                 "La foto es demasiado pesada para el servicio de OCR gratuito. "
@@ -47,19 +53,26 @@ class ExtractorTextoOcrSpace(ExtractorTexto):
         try:
             respuesta = requests.post(
                 URL_API,
-                files={"file": ("receta.jpg", contenido)},
+                files={"file": (nombre_archivo, contenido)},
                 data={
                     "apikey": self._api_key,
                     "language": "spa",
                     "OCREngine": "2",
                     "isOverlayRequired": "false",
                 },
-                timeout=30,
+                timeout=60,
             )
             respuesta.raise_for_status()
             datos = respuesta.json()
         except Exception as error:
-            registro.error("Fallo la llamada a OCR.space.", exc_info=error)
+            # Se registra el cuerpo crudo de la respuesta cuando existe:
+            # sin esto, un fallo de OCR.space queda indistinguible de un
+            # problema de red al revisar los logs.
+            cuerpo = getattr(error, "response", None)
+            texto_cuerpo = cuerpo.text[:500] if cuerpo is not None else "(sin respuesta)"
+            registro.error(
+                "Fallo la llamada a OCR.space. Respuesta: %s", texto_cuerpo, exc_info=error
+            )
             raise ServicioNoDisponible(
                 "No se pudo leer el texto de la foto. Probá de nuevo en un momento."
             ) from error

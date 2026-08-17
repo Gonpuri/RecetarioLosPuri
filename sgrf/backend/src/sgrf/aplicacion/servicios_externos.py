@@ -28,8 +28,13 @@ class ExtractorTexto(ABC):
     """Obtiene el texto plano de un documento (PDF, imagen, pagina web)."""
 
     @abstractmethod
-    def extraer(self, contenido: bytes) -> str:
-        """Devuelve el texto extraido. Cadena vacia si no se encontro texto."""
+    def extraer(self, contenido: bytes, nombre_archivo: str = "archivo") -> str:
+        """Devuelve el texto extraido. Cadena vacia si no se encontro texto.
+
+        `nombre_archivo` es el nombre original tal como lo subio la
+        persona. Algunos extractores lo necesitan para inferir el formato
+        (por ejemplo, distinguir JPEG de PNG); otros lo ignoran.
+        """
 
 
 class AsistenteEstructuracion(ABC):

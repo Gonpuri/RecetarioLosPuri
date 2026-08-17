@@ -43,12 +43,17 @@ class ImportarRecetaDesdeArchivo(CasoDeUso):
         self._extractor_texto = extractor_texto
         self._asistente_ia = asistente_ia
 
-    def ejecutar(self, solicitante_id: UUID, contenido: bytes) -> RecetaImportada:
+    def ejecutar(
+        self,
+        solicitante_id: UUID,
+        contenido: bytes,
+        nombre_archivo: str = "archivo",
+    ) -> RecetaImportada:
         """Extrae el texto del archivo y le pide al asistente que lo estructure."""
         usuario = self._obtener_usuario(solicitante_id)
         self.autorizacion.asegurar_activo(usuario)
 
-        texto = self._extractor_texto.extraer(contenido)
+        texto = self._extractor_texto.extraer(contenido, nombre_archivo)
         if not texto.strip():
             raise ValorInvalido(
                 "No se pudo leer texto de este archivo. Probá con una "

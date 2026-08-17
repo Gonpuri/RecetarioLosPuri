@@ -41,7 +41,12 @@ class _VistaImportacionBase(VistaBase):
     concretos (extractor de texto y estructurador) a usar.
     """
 
-    def _ejecutar(self, caso_de_uso: ImportarRecetaDesdeArchivo, contenido: bytes):
+    def _ejecutar(
+        self,
+        caso_de_uso: ImportarRecetaDesdeArchivo,
+        contenido: bytes,
+        nombre_archivo: str,
+    ):
         """Corre el caso de uso traduciendo cada excepcion a su codigo HTTP.
 
         422 para un archivo del que no se pudo sacar nada util, 403 si el
@@ -49,7 +54,9 @@ class _VistaImportacionBase(VistaBase):
         un 500 opaco: siempre queda claro que fue lo que salio mal.
         """
         try:
-            borrador = caso_de_uso.ejecutar(self.solicitante_id, contenido)
+            borrador = caso_de_uso.ejecutar(
+                self.solicitante_id, contenido, nombre_archivo
+            )
         except ValorInvalido as fallo:
             return Response({"error": str(fallo)}, status=422)
         except UsuarioInactivo as fallo:
@@ -82,12 +89,13 @@ class ImportarPdfVista(_VistaImportacionBase):
             )
 
         datos = self.validar(s.ImportarPdfEntrada)
+        archivo = datos["archivo"]
         caso_de_uso = ImportarRecetaDesdeArchivo(
             self.uow,
             extractor_texto=ExtractorTextoPdf(),
             asistente_ia=AsistenteEstructuracionClaude(settings.ANTHROPIC_API_KEY),
         )
-        return self._ejecutar(caso_de_uso, datos["archivo"].read())
+        return self._ejecutar(caso_de_uso, archivo.read(), archivo.name)
 
 
 class ImportarFotoVista(_VistaImportacionBase):
@@ -113,9 +121,10 @@ class ImportarFotoVista(_VistaImportacionBase):
             )
 
         datos = self.validar(s.ImportarFotoEntrada)
+        archivo = datos["archivo"]
         caso_de_uso = ImportarRecetaDesdeArchivo(
             self.uow,
             extractor_texto=ExtractorTextoOcrSpace(settings.OCR_SPACE_API_KEY),
             asistente_ia=EstructuradorHeuristico(),
         )
-        return self._ejecutar(caso_de_uso, datos["archivo"].read())
+        return self._ejecutar(caso_de_uso, archivo.read(), archivo.name)

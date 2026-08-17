@@ -22,14 +22,16 @@ from sgrf.dominio.excepciones import ValorInvalido
 
 
 class ExtractorFalso(ExtractorTexto):
-    """Devuelve un texto fijo, sin abrir ningun PDF de verdad."""
+    """Devuelve un texto fijo, sin abrir ningun archivo de verdad."""
 
     def __init__(self, texto: str = "Texto de una receta cualquiera.") -> None:
         self.texto = texto
         self.ultimo_contenido_recibido: bytes | None = None
+        self.ultimo_nombre_recibido: str | None = None
 
-    def extraer(self, contenido: bytes) -> str:
+    def extraer(self, contenido: bytes, nombre_archivo: str = "archivo") -> str:
         self.ultimo_contenido_recibido = contenido
+        self.ultimo_nombre_recibido = nombre_archivo
         return self.texto
 
 
@@ -94,6 +96,22 @@ class TestImportarRecetaDesdeArchivo:
         assert borrador.nombre == "Pan casero"
         assert len(borrador.preparaciones) == 1
         assert len(borrador.preparaciones[0].ingredientes) == 2
+
+    def test_le_pasa_el_nombre_real_del_archivo_al_extractor(self, uow, familiar):
+        """Bug reportado: OCR.space rechazaba fotos que no eran JPEG porque
+        el nombre de archivo quedaba hardcodeado como 'receta.jpg' sin
+        importar el formato real. El nombre real tiene que llegar entero
+        hasta el extractor, que es quien lo necesita para inferir el
+        formato de la imagen.
+        """
+        extractor = ExtractorFalso()
+        caso_de_uso = ImportarRecetaDesdeArchivo(
+            uow,
+            extractor_texto=extractor,
+            asistente_ia=AsistenteFalso(),
+        )
+        caso_de_uso.ejecutar(familiar.id, b"contenido-png-falso", "mi_receta.png")
+        assert extractor.ultimo_nombre_recibido == "mi_receta.png"
 
     def test_no_persiste_ninguna_receta(self, uow, familiar):
         caso_de_uso = ImportarRecetaDesdeArchivo(

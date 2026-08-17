@@ -161,9 +161,17 @@ export default function Recetas({
         <h1 className="text-2xl font-semibold tracking-tight">
           {soloFavoritas ? "Favoritas" : "Recetas"}
         </h1>
-        <Link to="/recetas/nueva" className="boton-primario">
-          Nueva receta
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            to="/recetas/importar"
+            className="hidden text-sm font-semibold text-azul sm:inline"
+          >
+            Importar
+          </Link>
+          <Link to="/recetas/nueva" className="boton-primario">
+            Nueva receta
+          </Link>
+        </div>
       </div>
 
       {/* Capítulo 6.5: la búsqueda está disponible desde la pantalla principal. */}

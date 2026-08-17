@@ -620,18 +620,43 @@ Estas resuelven puntos que el análisis no detalla. Se documentan porque
 | D-18 | Las listas de compras son personales | Cap. 1.5 comparte el recetario, no las listas |
 | D-19 | Cualquier usuario activo crea ingredientes; categorías y fuentes siguen siendo del administrador | Evita que cargar una receta dependa de un tercero; el resto de los catálogos define la clasificación de todo el recetario |
 | D-20 | Crear, duplicar y marcar favorita: cualquier usuario activo. Editar una receta ya existente: solo el Administrador | Evita que un integrante altere sin querer una receta cargada por otro; duplicar y favorita no modifican contenido existente |
+| D-21 | Importación desde PDF usa la API de Claude para entender el texto, con un costo pequeño por receta | La estructuración con IA es la que da una separación confiable entre ingredientes y pasos |
+| D-22 | Importación desde foto usa OCR gratuito (OCR.space) más reglas simples, sin IA, por decisión explícita del usuario de no generar costo en esa vía | Render no permite instalar Tesseract en su entorno nativo; OCR.space evita ese problema sin costo |
 
 ---
 
 ## 11. Qué falta
 
-El alcance de la versión 1.0 está completo. Quedan sin implementar únicamente
-funciones que el propio análisis difiere:
+El alcance de las versiones 1.0 y 1.1 está completo. La 2.0 tiene PDF y foto
+funcionando; quedan documento web y dictado.
+
+### Importación de recetas (Cap. 7.7, versión 2.0)
+
+Arquitectura compartida entre los dos métodos ya construidos: un caso de uso
+genérico (`ImportarRecetaDesdeArchivo`) que no sabe si el archivo es un PDF o
+una foto — solo recibe un extractor de texto y un estructurador, cada uno
+intercambiable.
+
+| | PDF | Foto |
+|---|---|---|
+| Extraer texto | pdfplumber (gratis, local) | OCR.space (gratis, 25.000/mes) |
+| Entender el texto | Claude (con costo) | Reglas con expresiones regulares (gratis) |
+| Calidad | Alta | Menor, sobre todo con letra manuscrita |
+
+Ninguno de los dos persiste nada por sí solo: devuelven un borrador
+(`RecetaImportada`) que se muestra en el mismo formulario de "Nueva receta"
+para revisar y corregir antes de guardar con el alta común. Los ingredientes
+detectados se intentan hacer coincidir con el catálogo por nombre; si no hay
+coincidencia, el formulario ya sabe crear uno nuevo al vuelo (decisión D-19).
+
+**Pendiente:** importación desde documento web (URL) y dictado por voz. El
+dictado no necesita backend nuevo — se resuelve con la API de reconocimiento
+de voz del navegador — así que es el más simple de sumar cuando se retome.
 
 ### Diferido por el propio análisis
 
-Cap. 7.7: exportación y mejoras de búsqueda en la 1.1; OCR, IA, temporizadores e
-importación automática en la 2.0.
+Cap. 7.7: temporizadores por paso, quedan fuera del pedido explícito del
+usuario para la 2.0.
 
 La arquitectura los admite sin tocar el dominio, que es lo que pide el Cap. 5.11.
 

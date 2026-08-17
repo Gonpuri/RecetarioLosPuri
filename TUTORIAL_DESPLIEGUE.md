@@ -163,6 +163,41 @@ despliegue.
 
 ---
 
+## 4.1 Importación de recetas (opcional, versión 2.0)
+
+Dos funciones más, cada una con su propia clave. Ninguna es necesaria para
+usar el resto del sistema: si falta alguna, esa importación puntual muestra
+un aviso claro en vez de romperse.
+
+### Importar desde PDF (tiene costo por uso)
+
+1. Entrá a **console.anthropic.com** → creá una cuenta si no tenés
+2. **API Keys** → **Create Key**
+3. Copiá la clave (empieza con `sk-ant-...`)
+4. En Render → `sgrf-backend` → **Environment**:
+
+| Clave | Valor |
+|---|---|
+| `ANTHROPIC_API_KEY` | la clave que copiaste |
+
+Cargá algo de saldo en la cuenta de Anthropic (Billing → Add credits). El
+costo por receta es chico, pero es real.
+
+### Importar desde foto (gratis)
+
+1. Entrá a **ocr.space/ocrapi** → **Free API Key**
+2. Te la manda por correo, sin pedir tarjeta
+3. En Render → `sgrf-backend` → **Environment**:
+
+| Clave | Valor |
+|---|---|
+| `OCR_SPACE_API_KEY` | la clave que te llegó por correo |
+
+Es gratis hasta 25.000 lecturas por mes — para uso familiar, no debería
+acercarse a ese límite nunca.
+
+---
+
 ## 5. Desplegar el front en Vercel
 
 1. En Vercel: **Add New** → **Project**

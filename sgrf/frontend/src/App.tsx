@@ -14,6 +14,7 @@ import { useAutenticacion } from "./contexto/Autenticacion";
 import Administracion from "./paginas/Administracion";
 import DetalleReceta from "./paginas/DetalleReceta";
 import EditarReceta from "./paginas/EditarReceta";
+import ImportarReceta from "./paginas/ImportarReceta";
 import ImprimirReceta from "./paginas/ImprimirReceta";
 import Ingresar from "./paginas/Ingresar";
 import ListaCompras from "./paginas/ListaCompras";
@@ -135,6 +136,14 @@ export default function App() {
             element={
               <Protegida>
                 <NuevaReceta />
+              </Protegida>
+            }
+          />
+          <Route
+            path="/recetas/importar"
+            element={
+              <Protegida>
+                <ImportarReceta />
               </Protegida>
             }
           />

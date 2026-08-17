@@ -5,10 +5,16 @@
  * de preparaciones, y cada preparación tiene sus ingredientes y sus pasos.
  * Por eso arranca con una preparación ya creada: RN-003 exige al menos
  * una, y pedirla como paso aparte sólo agregaría fricción.
+ *
+ * También sirve como paso de revisión de la importación (Cap. 7.7, v2.0):
+ * si se le pasa `borradorInicial`, precompleta todo con lo que la
+ * importación entendió, en lugar de arrancar vacío. Es el mismo
+ * formulario porque el problema es el mismo -cargar una receta-, solo que
+ * una vez arranca en blanco y la otra ya trae una propuesta.
  */
 
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 import { ErrorApi, pedir } from "../api/cliente";
 import {
@@ -17,6 +23,7 @@ import {
   UNIDADES,
   type ElementoCatalogo,
   type Receta,
+  type RecetaImportada,
   type TipoEscalado,
 } from "../api/tipos";
 import { Aviso } from "../componentes/Comunes";
@@ -50,17 +57,51 @@ const PREPARACION_VACIA: PreparacionBorrador = {
   pasos: [""],
 };
 
-export default function NuevaReceta() {
+/** Traduce el borrador de la importación a la forma que usa este formulario. */
+function desdeBorradorImportado(borrador: RecetaImportada): {
+  preparaciones: PreparacionBorrador[];
+} {
+  return {
+    preparaciones: borrador.preparaciones.map((preparacion) => ({
+      nombre: preparacion.nombre,
+      pasos: preparacion.pasos.length > 0 ? preparacion.pasos : [""],
+      ingredientes:
+        preparacion.ingredientes.length > 0
+          ? preparacion.ingredientes.map((ingrediente) => ({
+              ingrediente_id: ingrediente.ingrediente_id ?? "",
+              tipo_escalado: ingrediente.tipo_escalado,
+              cantidad: ingrediente.cantidad ?? "",
+              unidad: ingrediente.unidad ?? "g",
+              observacion: ingrediente.observacion,
+            }))
+          : [{ ...INGREDIENTE_VACIO }],
+    })),
+  };
+}
+
+export default function NuevaReceta({
+  borradorInicial,
+  titulo = "Nueva receta",
+}: {
+  borradorInicial?: RecetaImportada;
+  titulo?: string;
+}) {
   const navegar = useNavigate();
 
-  const [nombre, setNombre] = useState("");
-  const [descripcion, setDescripcion] = useState("");
-  const [rendimiento, setRendimiento] = useState("4");
-  const [unidadRendimiento, setUnidadRendimiento] = useState("porciones");
+  const [nombre, setNombre] = useState(borradorInicial?.nombre ?? "");
+  const [descripcion, setDescripcion] = useState(borradorInicial?.descripcion ?? "");
+  const [rendimiento, setRendimiento] = useState(
+    borradorInicial?.rendimiento_base ?? "4",
+  );
+  const [unidadRendimiento, setUnidadRendimiento] = useState(
+    borradorInicial?.rendimiento_descripcion ?? "porciones",
+  );
   const [fuenteId, setFuenteId] = useState("");
-  const [preparaciones, setPreparaciones] = useState<PreparacionBorrador[]>([
-    { ...PREPARACION_VACIA, ingredientes: [{ ...INGREDIENTE_VACIO }], pasos: [""] },
-  ]);
+  const [preparaciones, setPreparaciones] = useState<PreparacionBorrador[]>(
+    borradorInicial
+      ? desdeBorradorImportado(borradorInicial).preparaciones
+      : [{ ...PREPARACION_VACIA, ingredientes: [{ ...INGREDIENTE_VACIO }], pasos: [""] }],
+  );
 
   const [ingredientes, setIngredientes] = useState<ElementoCatalogo[]>([]);
   const [fuentes, setFuentes] = useState<ElementoCatalogo[]>([]);
@@ -75,13 +116,27 @@ export default function NuevaReceta() {
       .then(([catalogoIngredientes, catalogoFuentes]) => {
         setIngredientes(catalogoIngredientes);
         setFuentes(catalogoFuentes);
-        if (catalogoFuentes.length > 0) setFuenteId(catalogoFuentes[0].id);
+
+        // Si la importación sugirió una fuente, intentamos encontrarla por
+        // nombre entre las que ya existen; si no coincide con ninguna,
+        // queda la primera del catálogo, igual que en el alta común.
+        const sugerida = borradorInicial?.fuente_sugerida?.trim().toLowerCase();
+        const coincidencia = sugerida
+          ? catalogoFuentes.find((f) => f.nombre.toLowerCase() === sugerida)
+          : undefined;
+        if (coincidencia) {
+          setFuenteId(coincidencia.id);
+        } else if (catalogoFuentes.length > 0) {
+          setFuenteId(catalogoFuentes[0].id);
+        }
       })
       .catch(() =>
         setError(
           "No se pudieron cargar los ingredientes y las fuentes. Recargá la página.",
         ),
       );
+    // Solo se ejecuta al montar: el borrador es fijo durante la revisión.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   /** Aplica un cambio sobre una preparación sin mutar el estado anterior. */
@@ -161,7 +216,21 @@ export default function NuevaReceta() {
 
   return (
     <div className="space-y-5 pb-8">
-      <h1 className="text-2xl font-semibold tracking-tight">Nueva receta</h1>
+      <div className="flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight">{titulo}</h1>
+        {!borradorInicial && (
+          <Link
+            to="/recetas/importar"
+            className="text-sm font-semibold text-azul"
+          >
+            Importar desde PDF o foto
+          </Link>
+        )}
+      </div>
+
+      {borradorInicial?.advertencia && (
+        <Aviso tono="advertencia">{borradorInicial.advertencia}</Aviso>
+      )}
 
       {faltanCatalogos && (
         <Aviso tono="advertencia">

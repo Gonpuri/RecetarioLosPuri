@@ -78,6 +78,38 @@ export interface RecetaResumen {
 }
 
 /** Resultado del escalado. Es temporal: el backend nunca lo guarda. */
+/** Ingrediente tal como lo extrajo la importación, con su posible coincidencia. */
+export interface IngredienteImportado {
+  texto: string;
+  ingrediente_id: string | null;
+  cantidad: string | null;
+  unidad: string | null;
+  tipo_escalado: TipoEscalado;
+  observacion: string;
+}
+
+export interface PreparacionImportada {
+  nombre: string;
+  ingredientes: IngredienteImportado[];
+  pasos: string[];
+}
+
+/**
+ * Borrador de receta extraído de un PDF o una foto (Cap. 7.7, versión 2.0).
+ *
+ * Nunca es la receta guardada: es lo que la importación entendió, para
+ * revisar y corregir antes de guardarlo con el alta normal.
+ */
+export interface RecetaImportada {
+  nombre: string;
+  descripcion: string;
+  rendimiento_base: string;
+  rendimiento_descripcion: string;
+  fuente_sugerida: string;
+  preparaciones: PreparacionImportada[];
+  advertencia: string | null;
+}
+
 export interface RecetaEscalada {
   receta_id: string;
   nombre: string;

@@ -22,6 +22,7 @@ from sgrf.aplicacion.dto import (
 )
 from sgrf.aplicacion.excepciones import (
     ConflictoDeDatos,
+    PermisoDenegado,
     RecursoNoEncontrado,
     UsuarioInactivo,
 )
@@ -154,19 +155,19 @@ class TestConsultarReceta:
 
 
 class TestEditarReceta:
-    """CU-003: edicion de datos generales (RF-006)."""
+    """CU-003: edicion de datos generales (RF-006). Requiere Administrador (D-20)."""
 
-    def test_cambia_el_nombre(self, uow, familiar, receta_creada):
+    def test_cambia_el_nombre(self, uow, administrador, receta_creada):
         comando = ComandoEditarReceta(
-            solicitante_id=familiar.id,
+            solicitante_id=administrador.id,
             receta_id=receta_creada.id,
             nombre="Pan integral",
         )
         assert EditarReceta(uow).ejecutar(comando).nombre == "Pan integral"
 
-    def test_cambia_el_rendimiento_base(self, uow, familiar, receta_creada):
+    def test_cambia_el_rendimiento_base(self, uow, administrador, receta_creada):
         comando = ComandoEditarReceta(
-            solicitante_id=familiar.id,
+            solicitante_id=administrador.id,
             receta_id=receta_creada.id,
             rendimiento_base=Decimal("6"),
         )
@@ -174,9 +175,11 @@ class TestEditarReceta:
         assert resultado.rendimiento_base == Decimal("6")
         assert resultado.rendimiento_descripcion == "porciones"
 
-    def test_rechaza_nombre_de_otra_receta(self, uow, familiar, receta_creada, comando_pan):
+    def test_rechaza_nombre_de_otra_receta(
+        self, uow, administrador, receta_creada, comando_pan
+    ):
         segunda = ComandoCrearReceta(
-            solicitante_id=familiar.id,
+            solicitante_id=administrador.id,
             nombre="Focaccia",
             rendimiento_base=Decimal("4"),
             fuente_id=comando_pan.fuente_id,
@@ -184,49 +187,90 @@ class TestEditarReceta:
         )
         creada = CrearReceta(uow).ejecutar(segunda)
         comando = ComandoEditarReceta(
-            solicitante_id=familiar.id,
+            solicitante_id=administrador.id,
             receta_id=creada.id,
             nombre="Pan casero",
         )
         with pytest.raises(ConflictoDeDatos):
             EditarReceta(uow).ejecutar(comando)
 
-    def test_permite_conservar_su_propio_nombre(self, uow, familiar, receta_creada):
+    def test_permite_conservar_su_propio_nombre(self, uow, administrador, receta_creada):
         comando = ComandoEditarReceta(
-            solicitante_id=familiar.id,
+            solicitante_id=administrador.id,
             receta_id=receta_creada.id,
             nombre="Pan casero",
             descripcion="Actualizada.",
         )
         assert EditarReceta(uow).ejecutar(comando).descripcion == "Actualizada."
 
-
-class TestArchivadoYRestauracion:
-    """CU-004 y CU-005: archivado logico (RF-008 y RF-009)."""
-
-    def test_archivar_no_elimina(self, uow, familiar, receta_creada):
-        ArchivarReceta(uow).ejecutar(familiar.id, receta_creada.id)
-        assert uow.recetas.obtener(receta_creada.id).archivada
-
-    def test_receta_archivada_no_se_edita(self, uow, familiar, receta_creada):
-        ArchivarReceta(uow).ejecutar(familiar.id, receta_creada.id)
+    def test_familiar_no_puede_editar(self, uow, familiar, receta_creada):
+        """Decision D-20: editar una receta existente es solo del Administrador."""
         comando = ComandoEditarReceta(
             solicitante_id=familiar.id,
+            receta_id=receta_creada.id,
+            nombre="Intento no autorizado",
+        )
+        with pytest.raises(PermisoDenegado):
+            EditarReceta(uow).ejecutar(comando)
+
+    def test_administrador_edita_receta_de_otro_usuario(
+        self, uow, administrador, familiar, comando_pan
+    ):
+        """El recetario es compartido: el admin no necesita ser el autor."""
+        comando_familiar = ComandoCrearReceta(
+            solicitante_id=familiar.id,
+            nombre=comando_pan.nombre,
+            rendimiento_base=comando_pan.rendimiento_base,
+            fuente_id=comando_pan.fuente_id,
+            preparaciones=comando_pan.preparaciones,
+        )
+        creada = CrearReceta(uow).ejecutar(comando_familiar)
+        comando = ComandoEditarReceta(
+            solicitante_id=administrador.id,
+            receta_id=creada.id,
+            nombre="Corregido por el administrador",
+        )
+        assert (
+            EditarReceta(uow).ejecutar(comando).nombre
+            == "Corregido por el administrador"
+        )
+
+
+class TestArchivadoYRestauracion:
+    """CU-004 y CU-005: archivado logico (RF-008 y RF-009). Solo Administrador."""
+
+    def test_archivar_no_elimina(self, uow, administrador, receta_creada):
+        ArchivarReceta(uow).ejecutar(administrador.id, receta_creada.id)
+        assert uow.recetas.obtener(receta_creada.id).archivada
+
+    def test_receta_archivada_no_se_edita(self, uow, administrador, receta_creada):
+        ArchivarReceta(uow).ejecutar(administrador.id, receta_creada.id)
+        comando = ComandoEditarReceta(
+            solicitante_id=administrador.id,
             receta_id=receta_creada.id,
             nombre="Nuevo nombre",
         )
         with pytest.raises(RecetaArchivada):
             EditarReceta(uow).ejecutar(comando)
 
-    def test_restaurar_habilita_la_edicion(self, uow, familiar, receta_creada):
-        ArchivarReceta(uow).ejecutar(familiar.id, receta_creada.id)
-        RestaurarReceta(uow).ejecutar(familiar.id, receta_creada.id)
+    def test_restaurar_habilita_la_edicion(self, uow, administrador, receta_creada):
+        ArchivarReceta(uow).ejecutar(administrador.id, receta_creada.id)
+        RestaurarReceta(uow).ejecutar(administrador.id, receta_creada.id)
         comando = ComandoEditarReceta(
-            solicitante_id=familiar.id,
+            solicitante_id=administrador.id,
             receta_id=receta_creada.id,
             nombre="Pan de campo",
         )
         assert EditarReceta(uow).ejecutar(comando).nombre == "Pan de campo"
+
+    def test_familiar_no_archiva(self, uow, familiar, receta_creada):
+        with pytest.raises(PermisoDenegado):
+            ArchivarReceta(uow).ejecutar(familiar.id, receta_creada.id)
+
+    def test_familiar_no_restaura(self, uow, administrador, familiar, receta_creada):
+        ArchivarReceta(uow).ejecutar(administrador.id, receta_creada.id)
+        with pytest.raises(PermisoDenegado):
+            RestaurarReceta(uow).ejecutar(familiar.id, receta_creada.id)
 
 
 class TestDuplicarReceta:

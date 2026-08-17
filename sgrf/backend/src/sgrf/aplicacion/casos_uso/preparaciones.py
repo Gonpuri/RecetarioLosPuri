@@ -67,7 +67,7 @@ class GestionarPreparaciones(CasoDeUso):
     def _preparar(self, solicitante_id: UUID, receta_id: UUID):
         """Autoriza al solicitante y recupera la receta."""
         usuario = self._obtener_usuario(solicitante_id)
-        self.autorizacion.asegurar_puede_gestionar_recetas(usuario)
+        self.autorizacion.asegurar_administrador(usuario)
         return self._obtener_receta(receta_id)
 
     def _guardar(self, receta) -> None:
@@ -188,7 +188,7 @@ class GestionarIngredientesDePreparacion(CasoDeUso):
     def _preparar(self, solicitante_id: UUID, receta_id: UUID):
         """Autoriza al solicitante y recupera la receta."""
         usuario = self._obtener_usuario(solicitante_id)
-        self.autorizacion.asegurar_puede_gestionar_recetas(usuario)
+        self.autorizacion.asegurar_administrador(usuario)
         return self._obtener_receta(receta_id)
 
     def _guardar(self, receta) -> None:
@@ -260,7 +260,7 @@ class GestionarPasos(CasoDeUso):
     def _preparar(self, solicitante_id: UUID, receta_id: UUID):
         """Autoriza al solicitante y recupera la receta."""
         usuario = self._obtener_usuario(solicitante_id)
-        self.autorizacion.asegurar_puede_gestionar_recetas(usuario)
+        self.autorizacion.asegurar_administrador(usuario)
         return self._obtener_receta(receta_id)
 
     def _guardar(self, receta) -> None:
@@ -310,7 +310,7 @@ class GestionarFotografias(CasoDeUso):
     def _preparar(self, solicitante_id: UUID, receta_id: UUID):
         """Autoriza al solicitante y recupera la receta."""
         usuario = self._obtener_usuario(solicitante_id)
-        self.autorizacion.asegurar_puede_gestionar_recetas(usuario)
+        self.autorizacion.asegurar_administrador(usuario)
         return self._obtener_receta(receta_id)
 
     def _guardar(self, receta) -> None:
@@ -326,7 +326,7 @@ class GestionarNotas(CasoDeUso):
     def agregar(self, solicitante_id: UUID, receta_id: UUID, texto: str) -> UUID:
         """Registra una nota firmada por el solicitante (RF-025)."""
         usuario = self._obtener_usuario(solicitante_id)
-        self.autorizacion.asegurar_puede_gestionar_recetas(usuario)
+        self.autorizacion.asegurar_administrador(usuario)
         receta = self._obtener_receta(receta_id)
         nota = Nota(texto=texto, autor_id=usuario.id)
         receta.agregar_nota(nota)
@@ -355,7 +355,7 @@ class GestionarNotas(CasoDeUso):
     def _preparar(self, solicitante_id: UUID, receta_id: UUID):
         """Autoriza al solicitante y recupera la receta."""
         usuario = self._obtener_usuario(solicitante_id)
-        self.autorizacion.asegurar_puede_gestionar_recetas(usuario)
+        self.autorizacion.asegurar_administrador(usuario)
         return self._obtener_receta(receta_id)
 
     def _guardar(self, receta) -> None:

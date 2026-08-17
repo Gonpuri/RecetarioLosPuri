@@ -70,14 +70,14 @@ class TestEscalarReceta:
         assert resultado.preparaciones[0].pasos[0].descripcion == "Mezclar los secos."
 
     def test_las_fotografias_no_desaparecen_al_escalar(
-        self, uow, familiar, receta_creada
+        self, uow, administrador, familiar, receta_creada
     ):
         """Mismo bug que los pasos, para las fotografias."""
         from sgrf.aplicacion.casos_uso import GestionarFotografias
 
         preparacion_id = receta_creada.preparaciones[0].id
         GestionarFotografias(uow).agregar(
-            familiar.id,
+            administrador.id,
             receta_creada.id,
             preparacion_id,
             ruta="https://cdn.test/final.jpg",
@@ -127,9 +127,11 @@ class TestEscalarReceta:
         assert almacenada.rendimiento_base.valor == Decimal("4")
         assert almacenada.preparaciones[0].ingredientes[0].cantidad.valor == Decimal("500")
 
-    def test_receta_archivada_puede_escalarse(self, uow, familiar, receta_creada):
+    def test_receta_archivada_puede_escalarse(
+        self, uow, administrador, familiar, receta_creada
+    ):
         """Escalar es una lectura: no modifica y por eso no exige restaurar."""
-        ArchivarReceta(uow).ejecutar(familiar.id, receta_creada.id)
+        ArchivarReceta(uow).ejecutar(administrador.id, receta_creada.id)
         comando = ComandoEscalarReceta(
             solicitante_id=familiar.id,
             receta_id=receta_creada.id,
@@ -275,14 +277,18 @@ class TestBusqueda:
         )
         assert len(BuscarRecetas(uow).ejecutar(comando)) == 1
 
-    def test_excluye_archivadas_por_defecto(self, uow, familiar, receta_creada):
+    def test_excluye_archivadas_por_defecto(
+        self, uow, administrador, familiar, receta_creada
+    ):
         """Criterio de aceptacion 4.12."""
-        ArchivarReceta(uow).ejecutar(familiar.id, receta_creada.id)
+        ArchivarReceta(uow).ejecutar(administrador.id, receta_creada.id)
         comando = ComandoBuscarRecetas(solicitante_id=familiar.id, texto="pan")
         assert BuscarRecetas(uow).ejecutar(comando) == []
 
-    def test_incluye_archivadas_si_se_pide(self, uow, familiar, receta_creada):
-        ArchivarReceta(uow).ejecutar(familiar.id, receta_creada.id)
+    def test_incluye_archivadas_si_se_pide(
+        self, uow, administrador, familiar, receta_creada
+    ):
+        ArchivarReceta(uow).ejecutar(administrador.id, receta_creada.id)
         comando = ComandoBuscarRecetas(
             solicitante_id=familiar.id, texto="pan", incluir_archivadas=True
         )
@@ -296,9 +302,11 @@ class TestBusqueda:
         MarcarFavorita(uow).ejecutar(familiar.id, receta_creada.id)
         assert len(BuscarRecetas(uow).ejecutar(comando)) == 1
 
-    def test_busca_por_categoria(self, uow, familiar, receta_creada, categoria):
+    def test_busca_por_categoria(
+        self, uow, administrador, familiar, receta_creada, categoria
+    ):
         AsignarClasificacion(uow).asignar_categoria(
-            familiar.id, receta_creada.id, categoria.id
+            administrador.id, receta_creada.id, categoria.id
         )
         comando = ComandoBuscarRecetas(
             solicitante_id=familiar.id, categoria_id=categoria.id
@@ -319,7 +327,7 @@ class TestBusqueda:
 
 
 class TestPermisos:
-    """Capitulo 1.7 y decision D-9: separacion de perfiles."""
+    """Capitulo 1.7, decision D-9 y decision D-20: separacion de perfiles."""
 
     def test_familiar_no_administra_usuarios(self, uow, familiar):
         with pytest.raises(PermisoDenegado):
@@ -372,8 +380,13 @@ class TestPermisos:
         with pytest.raises(ConflictoDeDatos):
             GestionarCatalogoIngredientes(uow).crear(administrador.id, "Harina 000")
 
-    def test_familiar_edita_recetas_de_otros(self, uow, administrador, receta_creada):
-        """El recetario es compartido (Capitulo 1.5)."""
+    def test_administrador_edita_recetas_de_otros(
+        self, uow, administrador, receta_creada
+    ):
+        """El recetario es compartido (Cap. 1.5): el admin edita cualquier
+        receta sin importar quien la creo. Editarla es exclusivo del
+        Administrador (decision D-20); crearla sigue siendo libre.
+        """
         GestionarPreparaciones(uow).agregar(
             administrador.id,
             receta_creada.id,
@@ -381,48 +394,68 @@ class TestPermisos:
         )
         assert len(uow.recetas.obtener(receta_creada.id).preparaciones) == 2
 
+    def test_familiar_no_edita_recetas(self, uow, familiar, receta_creada):
+        """Decision D-20: editar el contenido de una receta ya creada
+        (agregar preparaciones, ingredientes, pasos, fotos, notas) queda
+        reservado al Administrador.
+        """
+        with pytest.raises(PermisoDenegado):
+            GestionarPreparaciones(uow).agregar(
+                familiar.id,
+                receta_creada.id,
+                DatosPreparacion(nombre="Cobertura", pasos=("Pincelar.",)),
+            )
+
     def test_cualquier_usuario_activo_consulta_el_catalogo(self, uow, familiar, harina):
         assert GestionarCatalogoIngredientes(uow).listar(familiar.id) != []
 
 
 class TestGestionarPreparaciones:
-    """CU-008: alta, baja y reordenamiento de Preparaciones."""
+    """CU-008: alta, baja y reordenamiento de Preparaciones. Solo Administrador."""
 
-    def test_agregar_preparacion(self, uow, familiar, receta_creada):
+    def test_agregar_preparacion(self, uow, administrador, receta_creada):
         GestionarPreparaciones(uow).agregar(
-            familiar.id,
+            administrador.id,
             receta_creada.id,
             DatosPreparacion(nombre="Salsa", pasos=("Reducir.",)),
         )
         assert len(uow.recetas.obtener(receta_creada.id).preparaciones) == 2
 
-    def test_no_se_elimina_la_ultima_preparacion(self, uow, familiar, receta_creada):
+    def test_no_se_elimina_la_ultima_preparacion(self, uow, administrador, receta_creada):
         """RN-003."""
         from sgrf.dominio.excepciones import ReglaDeNegocioViolada
 
         preparacion_id = receta_creada.preparaciones[0].id
         with pytest.raises(ReglaDeNegocioViolada):
             GestionarPreparaciones(uow).eliminar(
-                familiar.id, receta_creada.id, preparacion_id
+                administrador.id, receta_creada.id, preparacion_id
             )
 
-    def test_reordenar_preparaciones(self, uow, familiar, receta_creada):
+    def test_reordenar_preparaciones(self, uow, administrador, receta_creada):
         nueva_id = GestionarPreparaciones(uow).agregar(
-            familiar.id,
+            administrador.id,
             receta_creada.id,
             DatosPreparacion(nombre="Salsa", pasos=("Reducir.",)),
         )
         masa_id = receta_creada.preparaciones[0].id
         GestionarPreparaciones(uow).reordenar(
-            familiar.id, receta_creada.id, [nueva_id, masa_id]
+            administrador.id, receta_creada.id, [nueva_id, masa_id]
         )
         almacenada = uow.recetas.obtener(receta_creada.id)
         assert almacenada.preparaciones_ordenadas[0].nombre == "Salsa"
 
-    def test_preparacion_inexistente_falla(self, uow, familiar, receta_creada):
+    def test_preparacion_inexistente_falla(self, uow, administrador, receta_creada):
         from sgrf.dominio.excepciones import ElementoNoEncontrado
 
         with pytest.raises(ElementoNoEncontrado):
             GestionarPreparaciones(uow).renombrar(
-                familiar.id, receta_creada.id, uuid4(), "Otro"
+                administrador.id, receta_creada.id, uuid4(), "Otro"
+            )
+
+    def test_familiar_no_agrega_preparaciones(self, uow, familiar, receta_creada):
+        with pytest.raises(PermisoDenegado):
+            GestionarPreparaciones(uow).agregar(
+                familiar.id,
+                receta_creada.id,
+                DatosPreparacion(nombre="Salsa", pasos=("Reducir.",)),
             )

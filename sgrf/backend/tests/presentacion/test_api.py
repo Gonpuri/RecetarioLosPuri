@@ -206,8 +206,8 @@ class TestRecetas:
         )
         assert respuesta.status_code == 404
 
-    def test_editar_cambia_el_nombre(self, familiar, catalogo):
-        cliente = autenticar(familiar)
+    def test_editar_cambia_el_nombre(self, administrador, catalogo):
+        cliente = autenticar(administrador)
         creada = cliente.post(
             "/api/recetas/", cuerpo_receta(catalogo), format="json"
         )
@@ -219,8 +219,8 @@ class TestRecetas:
         assert respuesta.status_code == 200
         assert respuesta.data["nombre"] == "Pan integral"
 
-    def test_editar_receta_archivada_devuelve_409(self, familiar, catalogo):
-        cliente = autenticar(familiar)
+    def test_editar_receta_archivada_devuelve_409(self, administrador, catalogo):
+        cliente = autenticar(administrador)
         creada = cliente.post(
             "/api/recetas/", cuerpo_receta(catalogo), format="json"
         )
@@ -250,13 +250,13 @@ class TestEscaladoApi:
         harina = respuesta.data["preparaciones"][0]["ingredientes"][0]
         assert harina["texto_cantidad"] == "1000 g"
 
-    def test_los_pasos_y_las_fotos_se_ven_al_escalar(self, familiar, catalogo):
+    def test_los_pasos_y_las_fotos_se_ven_al_escalar(self, administrador, catalogo):
         """Bug reportado en producción: al ajustar el rendimiento, la
         pantalla se quedaba solo con los ingredientes; pasos y fotos
         desaparecían porque el escalado no los copiaba desde la receta
         original.
         """
-        cliente = autenticar(familiar)
+        cliente = autenticar(administrador)
         creada = cliente.post(
             "/api/recetas/", cuerpo_receta(catalogo), format="json"
         )
@@ -390,16 +390,16 @@ class TestBusquedaApi:
         respuesta = cliente.get("/api/recetas/?texto=pan")
         assert len(respuesta.data) == 1
 
-    def test_excluye_archivadas_por_defecto(self, familiar, catalogo):
-        cliente = autenticar(familiar)
+    def test_excluye_archivadas_por_defecto(self, administrador, catalogo):
+        cliente = autenticar(administrador)
         creada = cliente.post(
             "/api/recetas/", cuerpo_receta(catalogo), format="json"
         )
         cliente.post(f"/api/recetas/{creada.data['id']}/archivar/")
         assert cliente.get("/api/recetas/?texto=pan").data == []
 
-    def test_incluye_archivadas_si_se_pide(self, familiar, catalogo):
-        cliente = autenticar(familiar)
+    def test_incluye_archivadas_si_se_pide(self, administrador, catalogo):
+        cliente = autenticar(administrador)
         creada = cliente.post(
             "/api/recetas/", cuerpo_receta(catalogo), format="json"
         )
@@ -411,8 +411,8 @@ class TestBusquedaApi:
 class TestFotografiasApi:
     """RN-005: el limite se traduce a 422 con el codigo de la regla."""
 
-    def test_rechaza_la_cuarta_fotografia(self, familiar, catalogo):
-        cliente = autenticar(familiar)
+    def test_rechaza_la_cuarta_fotografia(self, administrador, catalogo):
+        cliente = autenticar(administrador)
         creada = cliente.post(
             "/api/recetas/", cuerpo_receta(catalogo), format="json"
         )
@@ -478,8 +478,8 @@ class TestFirmaFotografia:
 class TestReordenamientoApi:
     """RF-014 y RF-022: reordenar preparaciones y pasos."""
 
-    def test_reordenar_preparaciones(self, familiar, catalogo):
-        cliente = autenticar(familiar)
+    def test_reordenar_preparaciones(self, administrador, catalogo):
+        cliente = autenticar(administrador)
         creada = cliente.post(
             "/api/recetas/", cuerpo_receta(catalogo), format="json"
         )
@@ -503,8 +503,8 @@ class TestReordenamientoApi:
         recuperada = cliente.get(f"/api/recetas/{receta_id}/")
         assert recuperada.data["preparaciones"][0]["nombre"] == "Salsa"
 
-    def test_reordenar_pasos(self, familiar, catalogo):
-        cliente = autenticar(familiar)
+    def test_reordenar_pasos(self, administrador, catalogo):
+        cliente = autenticar(administrador)
         creada = cliente.post(
             "/api/recetas/", cuerpo_receta(catalogo), format="json"
         )
@@ -543,8 +543,8 @@ class TestClasificacionApi:
         assert cliente.delete(ruta).status_code == 204
         assert cliente.get(f"/api/recetas/{receta_id}/").data["categorias_ids"] == []
 
-    def test_categoria_inexistente_devuelve_404(self, familiar, catalogo):
-        cliente = autenticar(familiar)
+    def test_categoria_inexistente_devuelve_404(self, administrador, catalogo):
+        cliente = autenticar(administrador)
         creada = cliente.post(
             "/api/recetas/", cuerpo_receta(catalogo), format="json"
         )
@@ -558,8 +558,8 @@ class TestClasificacionApi:
 class TestModificarIngredienteApi:
     """RF-017: cambiar cantidad, unidad y tipo de escalado."""
 
-    def test_cambiar_la_cantidad(self, familiar, catalogo):
-        cliente = autenticar(familiar)
+    def test_cambiar_la_cantidad(self, administrador, catalogo):
+        cliente = autenticar(administrador)
         creada = cliente.post(
             "/api/recetas/", cuerpo_receta(catalogo), format="json"
         )
@@ -579,9 +579,9 @@ class TestModificarIngredienteApi:
         actualizado = recuperada.data["preparaciones"][0]["ingredientes"][0]
         assert actualizado["texto_cantidad"] == "750 g"
 
-    def test_pasar_a_a_gusto_descarta_la_cantidad(self, familiar, catalogo):
+    def test_pasar_a_a_gusto_descarta_la_cantidad(self, administrador, catalogo):
         """Decision D-1: los tipos sin cantidad no pueden conservarla."""
-        cliente = autenticar(familiar)
+        cliente = autenticar(administrador)
         creada = cliente.post(
             "/api/recetas/", cuerpo_receta(catalogo), format="json"
         )
@@ -635,8 +635,8 @@ class TestDuplicarApi:
 class TestNotasApi:
     """RF-025 y RF-026: notas permanentes."""
 
-    def test_agregar_editar_y_eliminar(self, familiar, catalogo):
-        cliente = autenticar(familiar)
+    def test_agregar_editar_y_eliminar(self, administrador, catalogo):
+        cliente = autenticar(administrador)
         creada = cliente.post(
             "/api/recetas/", cuerpo_receta(catalogo), format="json"
         )
@@ -667,3 +667,129 @@ class TestNotasApi:
             == 204
         )
         assert cliente.get(f"/api/recetas/{receta_id}/").data["notas"] == []
+
+
+class TestPermisosEdicionRecetaApi:
+    """Decision D-20: crear una Receta es libre; editarla es del Administrador.
+
+    Se separa asi para que ningun integrante pueda alterar sin querer una
+    receta que cargo otra persona. Duplicar cuenta como crear -genera una
+    copia independiente (RN-004)- y marcar favorita es una preferencia
+    personal, asi que ambas siguen abiertas a cualquier usuario activo.
+    """
+
+    def test_familiar_crea_recetas(self, familiar, catalogo):
+        respuesta = autenticar(familiar).post(
+            "/api/recetas/", cuerpo_receta(catalogo), format="json"
+        )
+        assert respuesta.status_code == 201
+
+    def test_familiar_duplica_recetas(self, administrador, familiar, catalogo):
+        original = autenticar(administrador).post(
+            "/api/recetas/", cuerpo_receta(catalogo), format="json"
+        )
+        respuesta = autenticar(familiar).post(
+            f"/api/recetas/{original.data['id']}/duplicar/",
+            {"nombre": "Variante de la familia"},
+            format="json",
+        )
+        assert respuesta.status_code == 201
+
+    def test_familiar_marca_favorita(self, administrador, familiar, catalogo):
+        creada = autenticar(administrador).post(
+            "/api/recetas/", cuerpo_receta(catalogo), format="json"
+        )
+        respuesta = autenticar(familiar).post(
+            f"/api/recetas/{creada.data['id']}/favorita/",
+            {"favorita": True},
+            format="json",
+        )
+        assert respuesta.status_code == 204
+
+    def test_familiar_no_edita_datos_generales(self, administrador, familiar, catalogo):
+        creada = autenticar(administrador).post(
+            "/api/recetas/", cuerpo_receta(catalogo), format="json"
+        )
+        respuesta = autenticar(familiar).patch(
+            f"/api/recetas/{creada.data['id']}/",
+            {"nombre": "Otro nombre"},
+            format="json",
+        )
+        assert respuesta.status_code == 403
+
+    def test_familiar_no_archiva(self, administrador, familiar, catalogo):
+        creada = autenticar(administrador).post(
+            "/api/recetas/", cuerpo_receta(catalogo), format="json"
+        )
+        respuesta = autenticar(familiar).post(
+            f"/api/recetas/{creada.data['id']}/archivar/"
+        )
+        assert respuesta.status_code == 403
+
+    def test_familiar_no_agrega_preparaciones(
+        self, administrador, familiar, catalogo
+    ):
+        creada = autenticar(administrador).post(
+            "/api/recetas/", cuerpo_receta(catalogo), format="json"
+        )
+        respuesta = autenticar(familiar).post(
+            f"/api/recetas/{creada.data['id']}/preparaciones/",
+            {"nombre": "Salsa", "ingredientes": [], "pasos": []},
+            format="json",
+        )
+        assert respuesta.status_code == 403
+
+    def test_familiar_no_agrega_fotografias(
+        self, administrador, familiar, catalogo
+    ):
+        creada = autenticar(administrador).post(
+            "/api/recetas/", cuerpo_receta(catalogo), format="json"
+        )
+        preparacion_id = creada.data["preparaciones"][0]["id"]
+        respuesta = autenticar(familiar).post(
+            f"/api/recetas/{creada.data['id']}/preparaciones/{preparacion_id}/"
+            "fotografias/",
+            {"ruta": "https://cdn.test/final.jpg", "tipo": "final"},
+            format="json",
+        )
+        assert respuesta.status_code == 403
+
+    def test_familiar_no_agrega_notas(self, administrador, familiar, catalogo):
+        creada = autenticar(administrador).post(
+            "/api/recetas/", cuerpo_receta(catalogo), format="json"
+        )
+        respuesta = autenticar(familiar).post(
+            f"/api/recetas/{creada.data['id']}/notas/",
+            {"texto": "Una nota"},
+            format="json",
+        )
+        assert respuesta.status_code == 403
+
+    def test_familiar_no_asigna_categorias(
+        self, administrador, familiar, catalogo
+    ):
+        cliente_admin = autenticar(administrador)
+        categoria = cliente_admin.post(
+            "/api/categorias/", {"nombre": "Panaderia"}, format="json"
+        )
+        creada = cliente_admin.post(
+            "/api/recetas/", cuerpo_receta(catalogo), format="json"
+        )
+        respuesta = autenticar(familiar).post(
+            f"/api/recetas/{creada.data['id']}/categorias/{categoria.data['id']}/"
+        )
+        assert respuesta.status_code == 403
+
+    def test_administrador_edita_una_receta_de_otro_usuario(
+        self, administrador, familiar, catalogo
+    ):
+        """El recetario es compartido: el admin no necesita ser el autor."""
+        creada = autenticar(familiar).post(
+            "/api/recetas/", cuerpo_receta(catalogo), format="json"
+        )
+        respuesta = autenticar(administrador).patch(
+            f"/api/recetas/{creada.data['id']}/",
+            {"nombre": "Corregido por el administrador"},
+            format="json",
+        )
+        assert respuesta.status_code == 200

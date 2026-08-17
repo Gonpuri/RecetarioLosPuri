@@ -22,6 +22,7 @@ import type {
 } from "../api/tipos";
 import { Aviso, Cargando, Estrella } from "../componentes/Comunes";
 import CompartirBoton from "../componentes/CompartirBoton";
+import { useAutenticacion } from "../contexto/Autenticacion";
 
 /** Control de rendimiento. Es el corazón de la pantalla. */
 function Rendimiento({
@@ -194,6 +195,7 @@ function BloquePreparacion({
 export default function DetalleReceta() {
   const { recetaId = "" } = useParams();
   const navegar = useNavigate();
+  const { esAdministrador } = useAutenticacion();
 
   const [receta, setReceta] = useState<Receta | null>(null);
   const [escalada, setEscalada] = useState<RecetaEscalada | null>(null);
@@ -533,9 +535,11 @@ export default function DetalleReceta() {
             ? "Marcá lo que te falta"
             : `Armar lista (${seleccionados.size})`}
         </button>
-        <Link to={`/recetas/${recetaId}/editar`} className="boton-secundario">
-          Editar
-        </Link>
+        {esAdministrador && (
+          <Link to={`/recetas/${recetaId}/editar`} className="boton-secundario">
+            Editar
+          </Link>
+        )}
         <Link
           to={`/recetas/${recetaId}/imprimir${
             rendimiento !== null ? `?rendimiento=${rendimiento}` : ""
@@ -547,9 +551,11 @@ export default function DetalleReceta() {
         <button type="button" className="boton-secundario" onClick={duplicar}>
           Duplicar
         </button>
-        <button type="button" className="boton-secundario" onClick={archivar}>
-          Archivar
-        </button>
+        {esAdministrador && (
+          <button type="button" className="boton-secundario" onClick={archivar}>
+            Archivar
+          </button>
+        )}
       </div>
     </div>
   );

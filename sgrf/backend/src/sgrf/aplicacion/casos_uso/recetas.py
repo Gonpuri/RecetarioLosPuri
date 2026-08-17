@@ -139,7 +139,7 @@ class EditarReceta(CasoDeUso):
     def ejecutar(self, comando: ComandoEditarReceta) -> RecetaResultado:
         """Actualiza la informacion general delegando en el agregado."""
         usuario = self._obtener_usuario(comando.solicitante_id)
-        self.autorizacion.asegurar_puede_gestionar_recetas(usuario)
+        self.autorizacion.asegurar_administrador(usuario)
         receta = self._obtener_receta(comando.receta_id)
 
         if comando.nombre and self.uow.recetas.existe_con_nombre(
@@ -187,7 +187,7 @@ class ArchivarReceta(CasoDeUso):
     def ejecutar(self, solicitante_id: UUID, receta_id: UUID) -> None:
         """Marca la receta como archivada."""
         usuario = self._obtener_usuario(solicitante_id)
-        self.autorizacion.asegurar_puede_gestionar_recetas(usuario)
+        self.autorizacion.asegurar_administrador(usuario)
         receta = self._obtener_receta(receta_id)
         receta.archivar()
         with self.uow:
@@ -201,7 +201,7 @@ class RestaurarReceta(CasoDeUso):
     def ejecutar(self, solicitante_id: UUID, receta_id: UUID) -> None:
         """Quita la marca de archivada."""
         usuario = self._obtener_usuario(solicitante_id)
-        self.autorizacion.asegurar_puede_gestionar_recetas(usuario)
+        self.autorizacion.asegurar_administrador(usuario)
         receta = self._obtener_receta(receta_id)
         receta.restaurar()
         with self.uow:

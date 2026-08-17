@@ -11,7 +11,7 @@
  */
 
 import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, Navigate, useNavigate, useParams } from "react-router-dom";
 
 import { ErrorApi, pedir } from "../api/cliente";
 import {
@@ -29,6 +29,7 @@ import { Aviso, Cargando } from "../componentes/Comunes";
 import Reordenar, { moverElemento } from "../componentes/Reordenar";
 import SelectorIngrediente from "../componentes/SelectorIngrediente";
 import SubirFotografia from "../componentes/SubirFotografia";
+import { useAutenticacion } from "../contexto/Autenticacion";
 
 const MAXIMO_PROCESO = 2;
 const MAXIMO_FINAL = 1;
@@ -36,6 +37,7 @@ const MAXIMO_FINAL = 1;
 export default function EditarReceta() {
   const { recetaId = "" } = useParams();
   const navegar = useNavigate();
+  const { esAdministrador, cargando: cargandoPerfil } = useAutenticacion();
 
   const [receta, setReceta] = useState<Receta | null>(null);
   const [ingredientes, setIngredientes] = useState<ElementoCatalogo[]>([]);
@@ -92,6 +94,9 @@ export default function EditarReceta() {
     },
     [recargar],
   );
+
+  if (cargandoPerfil) return <Cargando />;
+  if (!esAdministrador) return <Navigate to="/recetas" replace />;
 
   if (cargando) return <Cargando texto="Abriendo la receta…" />;
   if (!receta) return <Aviso>{error ?? "No se encontró la receta."}</Aviso>;

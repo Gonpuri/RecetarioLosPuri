@@ -226,12 +226,20 @@ Cap. 1.7 define dos perfiles. La lectura que hace el sistema:
 | Crear ingredientes | Sí | Sí (decisión D-19) |
 | Crear categorías, etiquetas, fuentes | Sí | No |
 | Consultar catálogos | Sí | Sí |
-| Crear, editar, archivar recetas | Sí | Sí |
+| **Crear** recetas, **duplicarlas**, marcarlas favoritas | Sí | Sí |
+| **Editar** una receta ya existente (datos, preparaciones, ingredientes, pasos, fotos, notas, categorías/etiquetas, archivar/restaurar) | Sí | **No** (decisión D-20) |
 | Escalar y generar listas | Sí | Sí |
 
-Un usuario desactivado no puede hacer nada. El recetario es compartido: cualquier
-usuario activo puede editar recetas creadas por otro (Cap. 1.5). Las listas de
-compras, en cambio, son personales.
+Un usuario desactivado no puede hacer nada. **Decisión D-20:** crear una receta
+sigue abierto a cualquier usuario activo —es lo que hace crecer el
+recetario—, pero modificar una receta ya existente quedó reservado al
+Administrador, para que ningún integrante altere sin querer una receta que
+cargó otra persona. El recetario sigue siendo compartido en el sentido del
+Cap. 1.5: el Administrador puede editar cualquier receta, no solo las suyas.
+Duplicar cuenta como crear —genera una copia independiente sin tocar la
+original (RN-004)— así que sigue abierto a todos, igual que marcar favorita,
+que es una preferencia y no una modificación de contenido. Las listas de
+compras, aparte de todo esto, son personales.
 
 ### Transacciones
 
@@ -611,6 +619,7 @@ Estas resuelven puntos que el análisis no detalla. Se documentan porque
 | D-17 | El marcado de "comprado" no se persiste | El análisis no lo pide |
 | D-18 | Las listas de compras son personales | Cap. 1.5 comparte el recetario, no las listas |
 | D-19 | Cualquier usuario activo crea ingredientes; categorías y fuentes siguen siendo del administrador | Evita que cargar una receta dependa de un tercero; el resto de los catálogos define la clasificación de todo el recetario |
+| D-20 | Crear, duplicar y marcar favorita: cualquier usuario activo. Editar una receta ya existente: solo el Administrador | Evita que un integrante altere sin querer una receta cargada por otro; duplicar y favorita no modifican contenido existente |
 
 ---
 

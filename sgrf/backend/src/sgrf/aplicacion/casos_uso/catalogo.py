@@ -254,7 +254,7 @@ class AsignarClasificacion(CasoDeUso):
     def _preparar(self, solicitante_id: UUID, receta_id: UUID):
         """Autoriza al solicitante y recupera la receta."""
         usuario = self._obtener_usuario(solicitante_id)
-        self.autorizacion.asegurar_puede_gestionar_recetas(usuario)
+        self.autorizacion.asegurar_administrador(usuario)
         return self._obtener_receta(receta_id)
 
     def _guardar(self, receta) -> None:

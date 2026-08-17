@@ -3,16 +3,28 @@
 El Capitulo 5.4 asigna a esta capa la validacion de permisos. Los perfiles
 provienen del Capitulo 1.7:
 
-- Administrador: administra usuarios y catalogos.
-- Usuario Familiar: crea, consulta, modifica y archiva recetas; genera
-  listas de compras.
+- Administrador: administra usuarios, catalogos y el contenido de las
+  recetas ya creadas.
+- Usuario Familiar: consulta el recetario, crea recetas y genera listas de
+  compras.
 
-Decision D-9 (pendiente de confirmacion): la administracion de los
-catalogos (Ingredientes, Categorias, Etiquetas y Fuentes) queda reservada
-al Administrador, mientras que toda operacion sobre Recetas y Listas de
-Compras esta disponible para cualquier usuario activo. El recetario es
-compartido (Capitulo 1.5), de modo que un Usuario Familiar puede editar
-recetas creadas por otro integrante.
+Decision D-20: crear una Receta queda abierto a cualquier usuario activo
+-es lo que hace crecer el recetario-, pero modificar una receta ya
+existente (datos generales, preparaciones, ingredientes, pasos,
+fotografias, notas, categorias y etiquetas; archivar o restaurar) requiere
+Administrador. Se separa asi para que ningun integrante pueda alterar sin
+querer una receta que cargo otra persona.
+
+Duplicar una receta cuenta como crear -genera una copia independiente, la
+original no se toca (RN-004)- asi que sigue abierto a cualquier usuario
+activo, igual que marcar una receta como favorita, que es una preferencia
+personal y no una modificacion del contenido.
+
+Decision D-9: la administracion de Categorias, Etiquetas y Fuentes sigue
+reservada al Administrador. Decision D-19: crear un Ingrediente del
+catalogo es la unica excepcion abierta a cualquier usuario activo, para
+que cargar una receta no dependa de un tercero cuando el ingrediente
+todavia no existe.
 """
 
 from __future__ import annotations
@@ -32,7 +44,12 @@ class Autorizacion:
             )
 
     def asegurar_administrador(self, usuario: Usuario) -> None:
-        """Exige perfil Administrador (gestion de usuarios y catalogos)."""
+        """Exige perfil Administrador.
+
+        Cubre la gestion de usuarios y catalogos (Categorias, Etiquetas,
+        Fuentes) y, desde la decision D-20, tambien la edicion del
+        contenido de una Receta ya existente.
+        """
         self.asegurar_activo(usuario)
         if not usuario.es_administrador:
             raise PermisoDenegado(
@@ -40,5 +57,9 @@ class Autorizacion:
             )
 
     def asegurar_puede_gestionar_recetas(self, usuario: Usuario) -> None:
-        """Exige un usuario activo: el recetario es compartido."""
+        """Exige un usuario activo.
+
+        Cubre las operaciones que no modifican una receta ya existente:
+        crearla, duplicarla o marcarla como favorita (decision D-20).
+        """
         self.asegurar_activo(usuario)

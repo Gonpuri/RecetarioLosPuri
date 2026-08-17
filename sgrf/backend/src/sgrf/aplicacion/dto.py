@@ -244,3 +244,54 @@ class UsuarioResultado:
     correo: str
     rol: str
     activo: bool
+
+
+# ---------------------------------------------------------------------------
+# Importacion de recetas (Cap. 7.7, version 2.0)
+# ---------------------------------------------------------------------------
+#
+# Estos DTO representan un BORRADOR, nunca una Receta persistida. La
+# extraccion con IA no es perfecta -una cantidad mal leida, un ingrediente
+# que no coincide con el catalogo- asi que el resultado se le muestra a la
+# persona para que lo revise y corrija antes de guardarlo con el flujo
+# normal de CrearReceta. Ningun caso de uso de importacion toca la base de
+# datos de Recetas.
+
+
+@dataclass(frozen=True)
+class IngredienteImportado:
+    """Ingrediente tal como lo extrajo la IA, con su posible coincidencia."""
+
+    texto: str
+    ingrediente_id: UUID | None
+    cantidad: Decimal | None
+    unidad: str | None
+    tipo_escalado: str = "lineal"
+    observacion: str = ""
+
+
+@dataclass(frozen=True)
+class PreparacionImportada:
+    """Preparacion extraida del documento original."""
+
+    nombre: str
+    ingredientes: tuple[IngredienteImportado, ...] = ()
+    pasos: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class RecetaImportada:
+    """Borrador de receta extraido de un PDF, foto o pagina web.
+
+    `fuente_sugerida` es texto libre: la Fuente real del Dominio debe
+    elegirse o crearse del catalogo antes de guardar, asi que aqui solo se
+    ofrece como ayuda para completar el formulario.
+    """
+
+    nombre: str
+    descripcion: str
+    rendimiento_base: Decimal
+    rendimiento_descripcion: str
+    fuente_sugerida: str
+    preparaciones: tuple[PreparacionImportada, ...] = ()
+    advertencia: str | None = None

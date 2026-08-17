@@ -17,6 +17,12 @@ whitenoise==6.6.0
 # El filesystem de Render es efimero: las imagenes viven fuera de la aplicacion.
 cloudinary==1.40.0
 
+# Importacion de recetas con IA (Cap. 7.7, version 2.0)
+pdfplumber==0.11.4
+anthropic==0.39.0
+requests==2.32.3
+Pillow==10.4.0
+
 # Pruebas
 pytest==8.2.2
 pytest-django==4.8.0

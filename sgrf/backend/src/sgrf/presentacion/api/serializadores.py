@@ -197,3 +197,21 @@ class UsuarioEntrada(serializers.Serializer):
         choices=["administrador", "usuario_familiar"], default="usuario_familiar"
     )
     clave = serializers.CharField(min_length=8, write_only=True)
+
+
+class ImportarPdfEntrada(serializers.Serializer):
+    """Importar una receta desde un PDF (Cap. 7.7, version 2.0)."""
+
+    archivo = serializers.FileField()
+
+    def validate_archivo(self, archivo):
+        """Exige que el archivo sea, al menos por extension, un PDF."""
+        if not archivo.name.lower().endswith(".pdf"):
+            raise serializers.ValidationError("El archivo debe ser un PDF.")
+        return archivo
+
+
+class ImportarFotoEntrada(serializers.Serializer):
+    """Importar una receta desde una foto (Cap. 7.7, version 2.0)."""
+
+    archivo = serializers.ImageField()

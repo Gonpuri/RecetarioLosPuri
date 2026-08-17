@@ -191,6 +191,17 @@ if CLOUDINARY_URL:
 
     cloudinary.config(secure=True)
 
+# --- Importacion de recetas con IA (Cap. 7.7, version 2.0) -----------------
+
+# Igual que las fotografias, es una funcion opcional: sin esta clave el
+# sistema arranca igual y solo se deshabilita la importacion desde PDF,
+# foto o web. Tiene costo por uso, a diferencia del resto del sistema.
+ANTHROPIC_API_KEY = variable("ANTHROPIC_API_KEY").strip()
+
+# Clave gratuita de OCR.space (25.000 lecturas por mes) para la
+# importacion desde foto, que decision del usuario no debe tener costo.
+OCR_SPACE_API_KEY = variable("OCR_SPACE_API_KEY").strip()
+
 # --- Archivos estaticos ----------------------------------------------------
 
 STATIC_URL = "static/"

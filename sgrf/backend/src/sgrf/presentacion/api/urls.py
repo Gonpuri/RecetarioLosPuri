@@ -9,6 +9,7 @@ from django.urls import path
 
 from . import vistas_catalogo as c
 from . import vistas_fotografias as f
+from . import vistas_importacion as imp
 from . import vistas_recetas as r
 
 urlpatterns = [
@@ -111,6 +112,17 @@ urlpatterns = [
         "fotografias/firma/",
         f.FirmaFotografiaVista.as_view(),
         name="firma_fotografia",
+    ),
+    # Importacion de recetas (Cap. 7.7, version 2.0)
+    path(
+        "importar/pdf/",
+        imp.ImportarPdfVista.as_view(),
+        name="importar_pdf",
+    ),
+    path(
+        "importar/foto/",
+        imp.ImportarFotoVista.as_view(),
+        name="importar_foto",
     ),
     # Listas de compras
     path("listas-compra/", r.ListasComprasVista.as_view(), name="listas_compra"),

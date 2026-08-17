@@ -11,6 +11,15 @@
  *
  * Los nombres estan en el Lenguaje Ubicuo del proyecto para que una clase
  * de Tailwind se lea igual que la especificacion.
+ *
+ * --- Paleta reservada para un proximo retoque (sin aplicar todavia) ---
+ * El dueño del proyecto dejo esta escala de violetas para usarla en el
+ * futuro. Todavia no se aplico a ningun lado: falta definir si reemplaza
+ * al azul como color principal o se suma como acento nuevo.
+ *   50  #EDE7FE   300 #8A62F8   700 #2F079D
+ *   100 #CCBAFC   400 #5F28F6   800 #210571
+ *   200 #AB8EFA   500 #490AF5   900 #140345
+ *                 600 #3C08C9   950 #070118
  */
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],

@@ -16,6 +16,7 @@ import { Link } from "react-router-dom";
 
 import { ErrorApi, pedir } from "../api/cliente";
 import type { ItemCompra, ListaCompra } from "../api/tipos";
+import CompartirBoton from "../componentes/CompartirBoton";
 import { Aviso, Cargando, Vacio } from "../componentes/Comunes";
 
 /** Un item con la lista a la que pertenece, para poder operar sobre él. */
@@ -163,7 +164,19 @@ export default function ListaCompras() {
 
   return (
     <div className="space-y-5">
-      <h1 className="text-2xl font-semibold tracking-tight">Lista de compras</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-semibold tracking-tight">Lista de compras</h1>
+        {pendientes.length > 0 && (
+          <CompartirBoton
+            titulo="Lista de compras"
+            texto={[
+              "Lista de compras",
+              "",
+              ...pendientes.map((e) => `- ${e.item.nombre}: ${e.item.texto_cantidad}`),
+            ].join("\n")}
+          />
+        )}
+      </div>
 
       {error && <Aviso>{error}</Aviso>}
 

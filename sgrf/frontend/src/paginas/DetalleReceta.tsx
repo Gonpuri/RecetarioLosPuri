@@ -21,6 +21,7 @@ import type {
   RecetaEscalada,
 } from "../api/tipos";
 import { Aviso, Cargando, Estrella } from "../componentes/Comunes";
+import CompartirBoton from "../componentes/CompartirBoton";
 
 /** Control de rendimiento. Es el corazón de la pantalla. */
 function Rendimiento({
@@ -421,19 +422,34 @@ export default function DetalleReceta() {
             )}
           </div>
 
-          <button
-            type="button"
-            onClick={alternarFavorita}
-            className={`rounded-pieza border border-borde p-2.5 transition-colors ${
-              receta.favorita ? "text-advertencia" : "text-tinta-tenue hover:text-azul"
-            }`}
-            aria-pressed={receta.favorita}
-            aria-label={
-              receta.favorita ? "Quitar de favoritas" : "Marcar como favorita"
-            }
-          >
-            <Estrella activa={receta.favorita} />
-          </button>
+          <div className="flex shrink-0 gap-2">
+            <CompartirBoton
+              titulo={receta.nombre}
+              texto={`${receta.nombre}\n${window.location.href}`}
+              className="rounded-pieza border border-borde p-2.5 text-tinta-tenue transition-colors hover:text-azul"
+              ariaLabel={`Compartir ${receta.nombre}`}
+            >
+              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+                <circle cx="18" cy="5" r="3" />
+                <circle cx="6" cy="12" r="3" />
+                <circle cx="18" cy="19" r="3" />
+                <path strokeLinecap="round" d="M8.6 10.5l6.8-3.8M8.6 13.5l6.8 3.8" />
+              </svg>
+            </CompartirBoton>
+            <button
+              type="button"
+              onClick={alternarFavorita}
+              className={`rounded-pieza border border-borde p-2.5 transition-colors ${
+                receta.favorita ? "text-advertencia" : "text-tinta-tenue hover:text-azul"
+              }`}
+              aria-pressed={receta.favorita}
+              aria-label={
+                receta.favorita ? "Quitar de favoritas" : "Marcar como favorita"
+              }
+            >
+              <Estrella activa={receta.favorita} />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -519,6 +535,14 @@ export default function DetalleReceta() {
         </button>
         <Link to={`/recetas/${recetaId}/editar`} className="boton-secundario">
           Editar
+        </Link>
+        <Link
+          to={`/recetas/${recetaId}/imprimir${
+            rendimiento !== null ? `?rendimiento=${rendimiento}` : ""
+          }`}
+          className="boton-secundario"
+        >
+          Imprimir
         </Link>
         <button type="button" className="boton-secundario" onClick={duplicar}>
           Duplicar

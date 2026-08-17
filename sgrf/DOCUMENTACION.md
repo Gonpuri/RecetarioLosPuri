@@ -544,13 +544,34 @@ Los 43 RF del Cap. 4, con dónde se resuelve cada uno en la interfaz:
 | RF-031 a RF-033 | Escalado | Detalle › control de rendimiento |
 | RF-034 / RF-035 | Lista de compras | Detalle › Armar lista |
 | RF-036 | Ver en el móvil | Diseño responsive |
-| RF-037 | Compartir o imprimir | **Diferido por el análisis** a versiones futuras |
+| RF-037 | Compartir o imprimir | Detalle › Compartir / Imprimir; Lista de compras › Compartir |
 | RF-038 | Buscar por nombre | Recetas |
 | RF-039 a RF-042 | Buscar por ingrediente, categoría, etiqueta, fuente | Recetas › Más filtros |
 | RF-043 | Filtrar favoritas y archivadas | Recetas / Favoritas |
 
-RF-037 es el único sin implementar, y por indicación del propio análisis
-(Cap. 4.10: "en futuras versiones").
+RF-037 se implementó en la versión 1.1, junto con las mejoras de búsqueda del
+Cap. 7.7. Los 43 RF están cubiertos.
+
+### v1.1: compartir e imprimir (RF-037)
+
+**No se integró directamente con Google Keep.** Su API oficial es exclusiva de
+cuentas de Google Workspace (empresariales/educativas); no está disponible
+para cuentas personales de Gmail. Existe una vía no oficial (`gkeepapi`), pero
+exige guardar un *master token* con acceso total a la cuenta de Google del
+usuario — un riesgo de seguridad que no se justifica para esta función.
+
+En su lugar se usa la **Web Share API** del navegador (`navigator.share`):
+comparte a cualquier app instalada —Keep, WhatsApp, Notas, correo— a través
+del mismo menú del sistema operativo. Es más flexible que integrarse con un
+solo destino y no expone ninguna credencial. En equipos sin esa API
+(la mayoría de los navegadores de escritorio), el botón cae a copiar el texto
+al portapapeles.
+
+**La impresión no tiene un modo de "previsualización" separado.** La pantalla
+`/recetas/:id/imprimir` ya es la vista previa: sin barra de navegación ni
+botones (se ocultan con la variante `print:` de Tailwind al imprimir de
+verdad), así que lo que se ve en el navegador es exactamente lo que sale en
+papel. Admite `?rendimiento=N` para imprimir la receta ya escalada.
 
 ### Decisiones arquitectónicas
 

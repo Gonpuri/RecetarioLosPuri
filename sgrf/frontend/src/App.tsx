@@ -14,6 +14,7 @@ import { useAutenticacion } from "./contexto/Autenticacion";
 import Administracion from "./paginas/Administracion";
 import DetalleReceta from "./paginas/DetalleReceta";
 import EditarReceta from "./paginas/EditarReceta";
+import ImprimirReceta from "./paginas/ImprimirReceta";
 import Ingresar from "./paginas/Ingresar";
 import ListaCompras from "./paginas/ListaCompras";
 import NuevaReceta from "./paginas/NuevaReceta";
@@ -39,7 +40,7 @@ function Navegacion() {
     }`;
 
   return (
-    <header className="sticky top-0 z-20 border-b border-borde bg-white/95 backdrop-blur">
+    <header className="sticky top-0 z-20 border-b border-borde bg-white/95 backdrop-blur print:hidden">
       <div className="mx-auto flex max-w-4xl items-center gap-4 px-4 py-3">
         <NavLink to="/recetas" className="mr-auto flex items-center gap-2">
           <span className="grid h-9 w-9 place-items-center rounded-pieza bg-azul text-white">
@@ -150,6 +151,14 @@ export default function App() {
             element={
               <Protegida>
                 <EditarReceta />
+              </Protegida>
+            }
+          />
+          <Route
+            path="/recetas/:recetaId/imprimir"
+            element={
+              <Protegida>
+                <ImprimirReceta />
               </Protegida>
             }
           />

@@ -16,62 +16,19 @@ from ..servicios_externos import AsistenteEstructuracion, ExtractorTexto
 from .base import CasoDeUso
 
 
-class ImportarRecetaDesdeArchivo(CasoDeUso):
-    """CU-026: extrae un borrador de Receta a partir de un archivo.
+class _ResuelveIngredientesImportados:
+    """Comparte el matching de ingredientes contra el catalogo.
 
-    No sabe si el archivo es un PDF, una foto o cualquier otra cosa: recibe
-    un ExtractorTexto y un AsistenteEstructuracion ya elegidos por quien lo
-    invoca (Cap. 7.7 - PDF usa pdfplumber y la API de Claude; foto usa una
-    API de OCR gratuita y reglas simples, sin IA, para no generar costo).
-
-    La extraccion nunca es perfecta -una cantidad mal leida, un ingrediente
-    que no coincide con el catalogo- asi que el resultado se muestra para
-    que la persona lo corrija antes de guardarlo. Cualquier usuario activo
-    puede importar, igual que puede crear una Receta desde el formulario
-    (decision D-20: crear es libre, editar es del Administrador; importar
-    es una forma de crear).
+    Tanto importar un archivo como estructurar un dictado terminan en el
+    mismo problema: la IA (o las reglas) trabajan con nombres de texto, sin
+    conocer las identidades del catalogo. Esta logica es identica en los
+    dos casos, asi que vive en un unico lugar en vez de duplicarse.
     """
 
-    def __init__(
-        self,
-        unidad_de_trabajo,
-        autorizacion=None,
-        extractor_texto: ExtractorTexto | None = None,
-        asistente_ia: AsistenteEstructuracion | None = None,
-    ) -> None:
-        super().__init__(unidad_de_trabajo, autorizacion)
-        self._extractor_texto = extractor_texto
-        self._asistente_ia = asistente_ia
-
-    def ejecutar(
-        self,
-        solicitante_id: UUID,
-        contenido: bytes,
-        nombre_archivo: str = "archivo",
-    ) -> RecetaImportada:
-        """Extrae el texto del archivo y le pide al asistente que lo estructure."""
-        usuario = self._obtener_usuario(solicitante_id)
-        self.autorizacion.asegurar_activo(usuario)
-
-        texto = self._extractor_texto.extraer(contenido, nombre_archivo)
-        if not texto.strip():
-            raise ValorInvalido(
-                "No se pudo leer texto de este archivo. Probá con una "
-                "imagen más nítida o con otro método de importación."
-            )
-
-        nombres_catalogo = [i.nombre for i in self.uow.ingredientes.listar_todos()]
-        borrador = self._asistente_ia.estructurar_receta(texto, nombres_catalogo)
-        return self._resolver_ingredientes(borrador)
+    uow: object  # provisto por CasoDeUso en la clase que use esta mixin
 
     def _resolver_ingredientes(self, borrador: RecetaImportada) -> RecetaImportada:
-        """Busca en el catalogo una coincidencia para cada ingrediente extraido.
-
-        La IA trabaja solo con nombres de texto: no conoce las identidades
-        del catalogo. Esta busqueda es lo que le permite al formulario
-        preseleccionar el ingrediente correcto en lugar de dejarlo todo
-        para crear de nuevo.
-        """
+        """Busca en el catalogo una coincidencia para cada ingrediente extraido."""
         preparaciones_resueltas = tuple(
             PreparacionImportada(
                 nombre=preparacion.nombre,
@@ -119,3 +76,89 @@ class ImportarRecetaDesdeArchivo(CasoDeUso):
             tipo_escalado=ingrediente.tipo_escalado,
             observacion=ingrediente.observacion,
         )
+
+
+class ImportarRecetaDesdeArchivo(CasoDeUso, _ResuelveIngredientesImportados):
+    """CU-026: extrae un borrador de Receta a partir de un archivo.
+
+    No sabe si el archivo es un PDF, una foto o cualquier otra cosa: recibe
+    un ExtractorTexto y un AsistenteEstructuracion ya elegidos por quien lo
+    invoca (Cap. 7.7 - PDF usa pdfplumber y la API de Claude; foto usa una
+    API de OCR gratuita y reglas simples, sin IA, para no generar costo).
+
+    La extraccion nunca es perfecta -una cantidad mal leida, un ingrediente
+    que no coincide con el catalogo- asi que el resultado se muestra para
+    que la persona lo corrija antes de guardarlo. Cualquier usuario activo
+    puede importar, igual que puede crear una Receta desde el formulario
+    (decision D-20: crear es libre, editar es del Administrador; importar
+    es una forma de crear).
+    """
+
+    def __init__(
+        self,
+        unidad_de_trabajo,
+        autorizacion=None,
+        extractor_texto: ExtractorTexto | None = None,
+        asistente_ia: AsistenteEstructuracion | None = None,
+    ) -> None:
+        super().__init__(unidad_de_trabajo, autorizacion)
+        self._extractor_texto = extractor_texto
+        self._asistente_ia = asistente_ia
+
+    def ejecutar(
+        self,
+        solicitante_id: UUID,
+        contenido: bytes,
+        nombre_archivo: str = "archivo",
+    ) -> RecetaImportada:
+        """Extrae el texto del archivo y le pide al asistente que lo estructure."""
+        usuario = self._obtener_usuario(solicitante_id)
+        self.autorizacion.asegurar_activo(usuario)
+
+        texto = self._extractor_texto.extraer(contenido, nombre_archivo)
+        if not texto.strip():
+            raise ValorInvalido(
+                "No se pudo leer texto de este archivo. Probá con una "
+                "imagen más nítida o con otro método de importación."
+            )
+
+        nombres_catalogo = [i.nombre for i in self.uow.ingredientes.listar_todos()]
+        borrador = self._asistente_ia.estructurar_receta(texto, nombres_catalogo)
+        return self._resolver_ingredientes(borrador)
+
+
+class EstructurarRecetaDictada(CasoDeUso, _ResuelveIngredientesImportados):
+    """CU-027: convierte una receta dictada en un borrador (Cap. 7.7, v2.0).
+
+    Mas simple que la importacion de archivos porque la transcripcion ya
+    llega hecha: el navegador convierte la voz a texto gratis, con su
+    propia funcion de reconocimiento de voz. El backend solo estructura
+    ese texto -el mismo trabajo que hace para un PDF, y con el mismo costo
+    por receta, porque separar ingredientes de pasos en un dictado hablado
+    de corrido (sin saltos de linea) no se puede resolver de forma
+    confiable con reglas simples (decision del usuario: prefirio pagar el
+    costo antes que un resultado sin estructura util).
+    """
+
+    def __init__(
+        self,
+        unidad_de_trabajo,
+        autorizacion=None,
+        asistente_ia: AsistenteEstructuracion | None = None,
+    ) -> None:
+        super().__init__(unidad_de_trabajo, autorizacion)
+        self._asistente_ia = asistente_ia
+
+    def ejecutar(self, solicitante_id: UUID, texto: str) -> RecetaImportada:
+        """Estructura el texto ya transcripto por el navegador."""
+        usuario = self._obtener_usuario(solicitante_id)
+        self.autorizacion.asegurar_activo(usuario)
+
+        if not texto.strip():
+            raise ValorInvalido(
+                "No se recibió ningún texto dictado. Probá grabar de nuevo."
+            )
+
+        nombres_catalogo = [i.nombre for i in self.uow.ingredientes.listar_todos()]
+        borrador = self._asistente_ia.estructurar_receta(texto, nombres_catalogo)
+        return self._resolver_ingredientes(borrador)

@@ -17,7 +17,7 @@ from .escalado import (
     MarcarItemComprado,
     QuitarItemDeLista,
 )
-from .importacion import ImportarRecetaDesdeArchivo
+from .importacion import EstructurarRecetaDictada, ImportarRecetaDesdeArchivo
 from .preparaciones import (
     GestionarFotografias,
     GestionarIngredientesDePreparacion,
@@ -55,6 +55,7 @@ __all__ = [
     "GestionarNotas",
     "GestionarPasos",
     "GestionarPreparaciones",
+    "EstructurarRecetaDictada",
     "GestionarUsuarios",
     "ImportarRecetaDesdeArchivo",
     "ListarListasCompras",

@@ -215,3 +215,13 @@ class ImportarFotoEntrada(serializers.Serializer):
     """Importar una receta desde una foto (Cap. 7.7, version 2.0)."""
 
     archivo = serializers.ImageField()
+
+
+class ImportarDictadoEntrada(serializers.Serializer):
+    """Estructurar una receta dictada (Cap. 7.7, version 2.0).
+
+    El texto ya viene transcripto por el navegador: no se sube ningun
+    archivo, solo el texto plano.
+    """
+
+    texto = serializers.CharField(max_length=20000)

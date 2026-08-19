@@ -622,36 +622,50 @@ Estas resuelven puntos que el análisis no detalla. Se documentan porque
 | D-20 | Crear, duplicar y marcar favorita: cualquier usuario activo. Editar una receta ya existente: solo el Administrador | Evita que un integrante altere sin querer una receta cargada por otro; duplicar y favorita no modifican contenido existente |
 | D-21 | Importación desde PDF usa la API de Claude para entender el texto, con un costo pequeño por receta | La estructuración con IA es la que da una separación confiable entre ingredientes y pasos |
 | D-22 | Importación desde foto usa OCR gratuito (OCR.space) más reglas simples, sin IA, por decisión explícita del usuario de no generar costo en esa vía | Render no permite instalar Tesseract en su entorno nativo; OCR.space evita ese problema sin costo |
+| D-23 | Importación por dictado usa IA para estructurar (con costo), no reglas simples | Un dictado hablado de corrido no tiene saltos de línea; las reglas que separan ingredientes de pasos en la foto dependen de esa estructura y no funcionan sobre prosa continua |
 
 ---
 
 ## 11. Qué falta
 
-El alcance de las versiones 1.0 y 1.1 está completo. La 2.0 tiene PDF y foto
-funcionando; quedan documento web y dictado.
+El alcance de las versiones 1.0 y 1.1 está completo. La 2.0 tiene PDF, foto y
+dictado funcionando; queda documento web.
 
 ### Importación de recetas (Cap. 7.7, versión 2.0)
 
-Arquitectura compartida entre los dos métodos ya construidos: un caso de uso
-genérico (`ImportarRecetaDesdeArchivo`) que no sabe si el archivo es un PDF o
-una foto — solo recibe un extractor de texto y un estructurador, cada uno
-intercambiable.
+Arquitectura compartida entre los tres métodos: un caso de uso genérico
+(`ImportarRecetaDesdeArchivo`) que no sabe si el archivo es un PDF o una
+foto — solo recibe un extractor de texto y un estructurador, cada uno
+intercambiable — y otro más simple para el dictado (`EstructurarRecetaDictada`),
+que se salta el paso de extracción porque el navegador ya entrega el texto
+transcripto. Los dos comparten el matching de ingredientes contra el
+catálogo a través de una mixin (`_ResuelveIngredientesImportados`), para no
+duplicar esa lógica.
 
-| | PDF | Foto |
-|---|---|---|
-| Extraer texto | pdfplumber (gratis, local) | OCR.space (gratis, 25.000/mes) |
-| Entender el texto | Claude (con costo) | Reglas con expresiones regulares (gratis) |
-| Calidad | Alta | Menor, sobre todo con letra manuscrita |
+| | PDF | Foto | Dictado |
+|---|---|---|---|
+| Extraer texto | pdfplumber (gratis, local) | OCR.space (gratis, 25.000/mes) | Navegador (gratis) |
+| Entender el texto | Claude (con costo) | Reglas con expresiones regulares (gratis) | Claude (con costo) |
+| Calidad | Alta | Menor, sobre todo con letra manuscrita | Alta |
 
-Ninguno de los dos persiste nada por sí solo: devuelven un borrador
+**Por qué el dictado usa IA y no reglas gratis, a diferencia de la foto**
+(decisión D-23): una receta escrita tiene saltos de línea ("500 g harina" en
+su propia línea), que es justamente lo que las reglas de la foto usan para
+separar ingredientes de pasos. Un dictado hablado de corrido no tiene esa
+estructura — llega como un párrafo continuo — así que las mismas reglas
+gratuitas producirían un resultado inútil (todo clasificado como un único
+paso, sin ingredientes detectados). El usuario, con esa información, eligió
+pagar el costo de la IA antes que un resultado sin estructura.
+
+Ninguno de los tres persiste nada por sí solo: devuelven un borrador
 (`RecetaImportada`) que se muestra en el mismo formulario de "Nueva receta"
 para revisar y corregir antes de guardar con el alta común. Los ingredientes
 detectados se intentan hacer coincidir con el catálogo por nombre; si no hay
 coincidencia, el formulario ya sabe crear uno nuevo al vuelo (decisión D-19).
 
-**Pendiente:** importación desde documento web (URL) y dictado por voz. El
-dictado no necesita backend nuevo — se resuelve con la API de reconocimiento
-de voz del navegador — así que es el más simple de sumar cuando se retome.
+**Pendiente:** importación desde documento web (URL). Necesita traer la
+página, limpiar el HTML y mandarlo a estructurar — el único de los cuatro
+métodos pedidos originalmente que todavía no se construyó.
 
 ### Diferido por el propio análisis
 

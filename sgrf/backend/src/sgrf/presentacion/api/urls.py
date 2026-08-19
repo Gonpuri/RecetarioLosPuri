@@ -124,6 +124,11 @@ urlpatterns = [
         imp.ImportarFotoVista.as_view(),
         name="importar_foto",
     ),
+    path(
+        "importar/dictado/",
+        imp.ImportarDictadoVista.as_view(),
+        name="importar_dictado",
+    ),
     # Listas de compras
     path("listas-compra/", r.ListasComprasVista.as_view(), name="listas_compra"),
     path(

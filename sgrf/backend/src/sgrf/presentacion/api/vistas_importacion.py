@@ -1,13 +1,13 @@
 """Importacion de recetas (Cap. 7.7, version 2.0).
 
-Extrae el texto de un archivo y le pide a algo que lo estructure. Nunca
-persiste una Receta: devuelve un borrador para que la persona lo revise en
-el formulario antes de guardarlo con el flujo normal de creacion
-(POST /api/recetas/).
+Extrae el texto de un archivo -o recibe el texto ya transcripto de un
+dictado- y le pide a algo que lo estructure. Nunca persiste una Receta:
+devuelve un borrador para que la persona lo revise en el formulario antes
+de guardarlo con el flujo normal de creacion (POST /api/recetas/).
 
-PDF usa la API de Claude para estructurar (con costo). Foto usa reglas
-simples sin IA, por decision explicita del usuario de no generar costo en
-esa via.
+PDF y dictado usan la API de Claude para estructurar (con costo). Foto usa
+reglas simples sin IA, por decision explicita del usuario de no generar
+costo en esa via.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ import logging
 from django.conf import settings
 from rest_framework.response import Response
 
-from ...aplicacion.casos_uso import ImportarRecetaDesdeArchivo
+from ...aplicacion.casos_uso import EstructurarRecetaDictada, ImportarRecetaDesdeArchivo
 from ...aplicacion.excepciones import UsuarioInactivo
 from ...aplicacion.servicios_externos import ServicioNoDisponible
 from ...dominio.excepciones import ValorInvalido
@@ -32,6 +32,19 @@ from .soporte import correcto
 from .vistas_recetas import VistaBase
 
 registro = logging.getLogger(__name__)
+
+
+def _sin_anthropic() -> Response:
+    """Respuesta uniforme cuando falta la clave de la API de Claude."""
+    return Response(
+        {
+            "error": (
+                "Esta importación no está configurada. "
+                "Falta la variable ANTHROPIC_API_KEY en el servidor."
+            )
+        },
+        status=503,
+    )
 
 
 class _VistaImportacionBase(VistaBase):
@@ -78,15 +91,7 @@ class ImportarPdfVista(_VistaImportacionBase):
         romper el resto del sistema.
         """
         if not settings.ANTHROPIC_API_KEY:
-            return Response(
-                {
-                    "error": (
-                        "La importación desde PDF no está configurada. "
-                        "Falta la variable ANTHROPIC_API_KEY en el servidor."
-                    )
-                },
-                status=503,
-            )
+            return _sin_anthropic()
 
         datos = self.validar(s.ImportarPdfEntrada)
         archivo = datos["archivo"]
@@ -128,3 +133,36 @@ class ImportarFotoVista(_VistaImportacionBase):
             asistente_ia=EstructuradorHeuristico(),
         )
         return self._ejecutar(caso_de_uso, archivo.read(), archivo.name)
+
+
+class ImportarDictadoVista(VistaBase):
+    """Recibe una receta dictada y devuelve un borrador para revisar.
+
+    El navegador transcribe la voz gratis, con su propia funcion de
+    reconocimiento de voz: aca solo llega texto plano, sin ningun archivo.
+    Estructurar un dictado hablado de corrido -sin saltos de linea como
+    los que tiene una receta escrita- no se puede resolver de forma
+    confiable con reglas simples, asi que usa la misma API de Claude que
+    el PDF, con el mismo costo por receta.
+    """
+
+    def post(self, peticion):
+        """Estructura el texto ya transcripto con la API de Claude."""
+        if not settings.ANTHROPIC_API_KEY:
+            return _sin_anthropic()
+
+        datos = self.validar(s.ImportarDictadoEntrada)
+        caso_de_uso = EstructurarRecetaDictada(
+            self.uow,
+            asistente_ia=AsistenteEstructuracionClaude(settings.ANTHROPIC_API_KEY),
+        )
+        try:
+            borrador = caso_de_uso.ejecutar(self.solicitante_id, datos["texto"])
+        except ValorInvalido as fallo:
+            return Response({"error": str(fallo)}, status=422)
+        except UsuarioInactivo as fallo:
+            return Response({"error": str(fallo)}, status=403)
+        except ServicioNoDisponible as fallo:
+            registro.warning("Fallo la estructuracion del dictado: %s", fallo)
+            return Response({"error": str(fallo)}, status=502)
+        return correcto(borrador)

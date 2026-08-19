@@ -10,7 +10,7 @@ from uuid import uuid4
 
 import pytest
 
-from sgrf.aplicacion.casos_uso import ImportarRecetaDesdeArchivo
+from sgrf.aplicacion.casos_uso import EstructurarRecetaDictada, ImportarRecetaDesdeArchivo
 from sgrf.aplicacion.dto import IngredienteImportado, PreparacionImportada, RecetaImportada
 from sgrf.aplicacion.excepciones import RecursoNoEncontrado, UsuarioInactivo
 from sgrf.aplicacion.servicios_externos import (
@@ -219,3 +219,51 @@ class TestImportarRecetaDesdeArchivo:
         )
         with pytest.raises(ServicioNoDisponible):
             caso_de_uso.ejecutar(familiar.id, b"contenido-pdf-falso")
+
+
+class TestEstructurarRecetaDictada:
+    """CU-027: estructura un texto ya transcripto por el navegador.
+
+    Mas simple que la importacion de archivos: no hay extractor, el texto
+    llega directo. Usa el mismo AsistenteFalso, ya que solo cambia como se
+    obtiene el texto, no como se estructura.
+    """
+
+    def test_devuelve_un_borrador_con_los_datos_de_la_ia(self, uow, familiar):
+        caso_de_uso = EstructurarRecetaDictada(uow, asistente_ia=AsistenteFalso())
+        borrador = caso_de_uso.ejecutar(
+            familiar.id, "Pan casero. Quinientos gramos de harina, sal a gusto."
+        )
+        assert borrador.nombre == "Pan casero"
+        assert len(borrador.preparaciones[0].ingredientes) == 2
+
+    def test_no_persiste_ninguna_receta(self, uow, familiar):
+        caso_de_uso = EstructurarRecetaDictada(uow, asistente_ia=AsistenteFalso())
+        caso_de_uso.ejecutar(familiar.id, "Un dictado cualquiera.")
+        assert uow.recetas.listar_todas() == []
+        assert uow.confirmaciones == 0
+
+    def test_hace_coincidir_ingredientes_del_catalogo(self, uow, familiar, harina):
+        caso_de_uso = EstructurarRecetaDictada(uow, asistente_ia=AsistenteFalso())
+        borrador = caso_de_uso.ejecutar(familiar.id, "Un dictado cualquiera.")
+        harina_importada = borrador.preparaciones[0].ingredientes[0]
+        assert harina_importada.ingrediente_id == harina.id
+
+    def test_texto_vacio_falla_con_mensaje_claro(self, uow, familiar):
+        caso_de_uso = EstructurarRecetaDictada(uow, asistente_ia=AsistenteFalso())
+        with pytest.raises(ValorInvalido, match="dictado"):
+            caso_de_uso.ejecutar(familiar.id, "   ")
+
+    def test_usuario_inactivo_no_puede_dictar(self, uow, familiar_inactivo):
+        caso_de_uso = EstructurarRecetaDictada(uow, asistente_ia=AsistenteFalso())
+        with pytest.raises(UsuarioInactivo):
+            caso_de_uso.ejecutar(familiar_inactivo.id, "Un dictado cualquiera.")
+
+    def test_propaga_error_del_servicio_externo(self, uow, familiar):
+        class AsistenteQueFalla(AsistenteEstructuracion):
+            def estructurar_receta(self, texto, nombres_ingredientes_catalogo):
+                raise ServicioNoDisponible("La API no respondió.")
+
+        caso_de_uso = EstructurarRecetaDictada(uow, asistente_ia=AsistenteQueFalla())
+        with pytest.raises(ServicioNoDisponible):
+            caso_de_uso.ejecutar(familiar.id, "Un dictado cualquiera.")
